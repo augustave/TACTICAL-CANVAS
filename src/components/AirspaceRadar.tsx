@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { ASSETS } from '../data';
 import type { MissionTask } from '../types';
+import { RadarSurface } from './RadarSurface';
 
 const CrosshairIcon = ({ size = 14, className = "" }: { size?: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
@@ -44,8 +45,25 @@ export function AirspaceRadar({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative w-full aspect-[4/3] bg-[#111] border-2 border-ink overflow-hidden shadow-[4px_6px_15px_rgba(0,0,0,0.6)] font-mono"
+      className="radar-frame relative w-full aspect-[4/3] overflow-hidden border-2 border-ink bg-[#050809] shadow-[4px_6px_15px_rgba(0,0,0,0.6)] font-mono"
     >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(16,34,37,0.88)_0%,rgba(4,9,12,0.96)_62%,rgba(0,0,0,1)_100%)]" />
+      <RadarSurface taskBias={currentTask ? 1 : 0} />
+      <div className="absolute inset-[3.5%] rounded-[50%] border border-[rgba(229,255,0,0.08)] shadow-[inset_0_0_60px_rgba(74,144,226,0.08)] pointer-events-none" />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_40%,rgba(255,255,255,0.08),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.08),transparent_28%),repeating-linear-gradient(180deg,rgba(255,255,255,0.028)_0,rgba(255,255,255,0.028)_1px,transparent_1px,transparent_4px)] mix-blend-screen opacity-45" />
+      <div className="absolute left-[8%] top-[14%] z-10 hidden md:flex items-center gap-2 border border-[rgba(74,144,226,0.25)] bg-black/45 px-2 py-1 text-[0.5rem] uppercase tracking-[0.26em] text-[#8ab7d8] backdrop-blur-sm">
+        <span className="h-1.5 w-1.5 rounded-full bg-radar-blue shadow-[0_0_8px_rgba(74,144,226,0.9)]" />
+        Volume Scan
+      </div>
+      <div className="absolute right-[8%] top-[16%] z-10 hidden md:flex items-center gap-3 border border-[rgba(229,255,0,0.18)] bg-black/45 px-2 py-1 text-[0.48rem] uppercase tracking-[0.22em] text-[#87918e] backdrop-blur-sm">
+        <span>Range 240nm</span>
+        <span className="text-acid-yellow">{currentTask ? 'Task Track' : 'Wide Search'}</span>
+      </div>
+      <div className="absolute left-1/2 top-1/2 z-[5] h-[82%] w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(255,255,255,0.03)] shadow-[0_0_0_1px_rgba(255,255,255,0.02),inset_0_0_35px_rgba(0,0,0,0.55)] pointer-events-none" />
+      <div className="absolute left-1/2 top-1/2 z-[5] h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-acid-yellow/35 bg-black/25 shadow-[0_0_14px_rgba(229,255,0,0.12)] pointer-events-none" />
+      <div className="absolute left-1/2 top-[12%] z-[5] h-[76%] w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(229,255,0,0.16),transparent)] pointer-events-none" />
+      <div className="absolute left-[12%] top-1/2 z-[5] h-px w-[76%] -translate-y-1/2 bg-[linear-gradient(90deg,transparent,rgba(229,255,0,0.16),transparent)] pointer-events-none" />
+
       {/* Top Assignment Bar — shows selected asset context */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center bg-black border border-[#333] text-archival-white text-xs whitespace-nowrap">
         <div className="px-3 py-1.5 text-[#888] border-r border-[#333] hidden sm:block">
@@ -76,44 +94,16 @@ export function AirspaceRadar({
         )}
       </div>
 
-      {/* Radar Grid & Rings */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none">
-        <defs>
-          <radialGradient id="radar-sweep" cx="0%" cy="0%" r="100%">
-            <stop offset="0%" stopColor="rgba(100, 150, 255, 0.4)" />
-            <stop offset="100%" stopColor="rgba(100, 150, 255, 0)" />
-          </radialGradient>
-        </defs>
-        <pattern id="radar-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-        </pattern>
-        <rect width="100%" height="100%" fill="url(#radar-grid)" />
-
-        {/* Concentric Rings */}
-        <g transform="translate(600, 400)">
-          {[100, 200, 300, 400, 500, 600].map((r, i) => (
-            <circle key={i} cx="0" cy="0" r={r} fill="none" stroke="rgba(229,255,0,0.4)" strokeWidth="1" />
-          ))}
-          <line x1="-800" y1="0" x2="800" y2="0" stroke="rgba(229,255,0,0.2)" strokeWidth="1" />
-          <line x1="0" y1="-800" x2="0" y2="800" stroke="rgba(229,255,0,0.2)" strokeWidth="1" />
-
-          <line x1="-300" y1="-200" x2="0" y2="0" stroke="rgba(229,255,0,0.8)" strokeWidth="2" strokeDasharray="4 4" />
-          <line x1="0" y1="0" x2="0" y2="400" stroke="rgba(229,255,0,0.8)" strokeWidth="2" strokeDasharray="4 4" />
-
-          {/* Radar Sweep Arc */}
-          <g className="origin-center animate-[spin_4s_linear_infinite]">
-            <path d="M 0 0 L 0 -800 A 800 800 0 0 1 400 -692 Z" fill="url(#radar-sweep)" />
-            <line x1="0" y1="0" x2="0" y2="-800" stroke="rgba(100, 150, 255, 0.8)" strokeWidth="2" />
-          </g>
-        </g>
-
-        {/* Secondary Radar Site */}
-        <g transform="translate(100, 700)">
-          {[100, 200, 300].map((r, i) => (
-            <circle key={i} cx="0" cy="0" r={r} fill="none" stroke="rgba(255,51,51,0.3)" strokeWidth="1" />
-          ))}
-        </g>
-      </svg>
+      <div className="pointer-events-none absolute bottom-[13%] left-[7%] z-10 hidden md:flex flex-col gap-1 border border-[rgba(255,255,255,0.08)] bg-black/35 px-2 py-2 text-[0.45rem] uppercase tracking-[0.22em] text-[#7c8886] backdrop-blur-sm">
+        <span className="text-[#b5c2bf]">Gate A</span>
+        <span>Altitude Stack</span>
+        <span>{currentTask ? 'Priority Intercept' : 'Routine Coverage'}</span>
+      </div>
+      <div className="pointer-events-none absolute bottom-[15%] right-[8%] z-10 hidden md:flex flex-col items-end gap-1 text-[0.45rem] uppercase tracking-[0.24em] text-[#86908d]">
+        <span>090</span>
+        <span>180</span>
+        <span>270</span>
+      </div>
 
       {/* Flight Markers — driven from shared ASSETS data */}
       {ASSETS.map((asset) => {
@@ -122,10 +112,10 @@ export function AirspaceRadar({
         const isTasked = currentTask?.assetId === asset.id;
 
         return (
-          <div
-            key={asset.id}
-            onClick={() => onSelectAsset?.(asset.id)}
-            className="absolute flex flex-col items-center gap-1 -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+            <div
+              key={asset.id}
+              onClick={() => onSelectAsset?.(asset.id)}
+            className="absolute z-20 flex cursor-pointer flex-col items-center gap-1 -translate-x-1/2 -translate-y-1/2"
             style={{ left: `${asset.radarX}%`, top: `${asset.radarY}%` }}
           >
             <motion.div
