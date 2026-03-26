@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
-import { ALERTS } from '../data';
-import type { AlertLevel } from '../types';
+import type { AlertLevel, MissionState } from '../types';
+import { buildMissionAlerts } from '../utils/mission';
 
 const AlertTriangleIcon = ({ size = 14, className = "" }: { size?: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" className={className}>
@@ -39,18 +39,14 @@ const COLOR_MAP: Record<AlertLevel, string> = {
 };
 
 interface Props {
-  selectedAssetId?: string | null;
+  mission: MissionState;
   onSelectAsset?: (id: string | null) => void;
 }
 
-export function AlertsWidget({ selectedAssetId = null, onSelectAsset }: Props) {
-  // When an asset is selected, related alerts rise to the top
-  const sortedAlerts = [...ALERTS].sort((a, b) => {
-    if (!selectedAssetId) return 0;
-    const aLinked = a.assetId === selectedAssetId ? -1 : 0;
-    const bLinked = b.assetId === selectedAssetId ? -1 : 0;
-    return aLinked - bLinked;
-  });
+export function AlertsWidget({ mission, onSelectAsset }: Props) {
+  const sortedAlerts = buildMissionAlerts(mission);
+  const missionAssetId = mission.currentTask?.assetId ?? mission.selectedAssetId;
+  const missionTargetId = mission.currentTask?.targetId ?? mission.selectedTargetId;
 
   return (
     <div className="w-full h-full min-h-[200px] bg-[#111] border border-[#333] flex flex-col font-mono text-xs text-archival-white overflow-hidden">
@@ -60,9 +56,9 @@ export function AlertsWidget({ selectedAssetId = null, onSelectAsset }: Props) {
           <div className="w-1.5 h-1.5 bg-alert-red rounded-full animate-ping" />
           <span className="font-bold tracking-widest text-[#888]">SYSTEM ALERTS</span>
         </div>
-        {selectedAssetId && (
+        {(missionAssetId || missionTargetId) && (
           <span className="text-[0.5rem] text-acid-yellow">
-            FILTERED: {selectedAssetId}
+            FOCUS: {missionAssetId ?? 'NO ASSET'} / {missionTargetId ?? 'NO TARGET'}
           </span>
         )}
       </div>
@@ -72,7 +68,10 @@ export function AlertsWidget({ selectedAssetId = null, onSelectAsset }: Props) {
         {sortedAlerts.map((alert, i) => {
           const Icon = ICON_MAP[alert.level];
           const color = alert.level === 'INFO' && !alert.assetId ? 'text-[#888]' : COLOR_MAP[alert.level];
-          const isLinked = selectedAssetId && alert.assetId === selectedAssetId;
+          const isLinked = Boolean(
+            (missionAssetId && alert.assetId === missionAssetId) ||
+            (missionTargetId && alert.targetId === missionTargetId),
+          );
 
           return (
             <motion.div
@@ -100,6 +99,11 @@ export function AlertsWidget({ selectedAssetId = null, onSelectAsset }: Props) {
                     {alert.assetId && (
                       <span className="text-[0.45rem] text-[#555] border border-[#333] px-1 py-0.5">
                         {alert.assetId}
+                      </span>
+                    )}
+                    {alert.targetId && (
+                      <span className="text-[0.45rem] text-[#6d3c44] border border-target-red/30 px-1 py-0.5 text-target-red">
+                        {alert.targetId}
                       </span>
                     )}
                     <span className="text-[0.5rem] text-[#666]">{alert.time}</span>

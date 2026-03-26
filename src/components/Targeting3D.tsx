@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { TARGETS } from '../data';
+import type { MissionTask } from '../types';
 
 const CrosshairIcon = ({ size = 14, className = "" }: { size?: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
@@ -28,11 +29,28 @@ const LayersIcon = ({ size = 14, className = "" }: { size?: number, className?: 
 
 interface Props {
   selectedTargetId?: string | null;
+  selectedAssetId?: string | null;
+  currentTask?: MissionTask | null;
   onSelectTarget?: (id: string | null) => void;
+  onTaskSelection?: () => void;
+  onClearTask?: () => void;
 }
 
-export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) {
-  const selectedTarget = selectedTargetId ? TARGETS.find(t => t.id === selectedTargetId) : TARGETS[0];
+export function Targeting3D({
+  selectedTargetId = null,
+  selectedAssetId = null,
+  currentTask = null,
+  onSelectTarget,
+  onTaskSelection,
+  onClearTask,
+}: Props) {
+  const selectedTarget = selectedTargetId ? TARGETS.find(t => t.id === selectedTargetId) ?? null : null;
+  const focusedTarget = selectedTarget ?? TARGETS[0];
+  const canTask = Boolean(selectedAssetId && selectedTarget);
+  const isCurrentTask =
+    Boolean(currentTask) &&
+    currentTask?.assetId === selectedAssetId &&
+    currentTask?.targetId === selectedTarget?.id;
 
   return (
     <motion.div
@@ -42,10 +60,12 @@ export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) 
     >
       {/* Top Action Bar — reflects selection state */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center bg-[#1a1a1a] border border-[#444] text-archival-white text-xs shadow-lg whitespace-nowrap">
-        <div className="px-3 py-2 text-[#888] border-r border-[#444] font-bold hidden sm:block">SELECTED:</div>
+        <div className="px-3 py-2 text-[#888] border-r border-[#444] font-bold hidden sm:block">
+          {selectedTarget ? 'SELECTED:' : 'FOCUS:'}
+        </div>
         <AnimatePresence mode="wait">
           <motion.div
-            key={selectedTarget?.id || 'none'}
+            key={focusedTarget.id}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
@@ -54,8 +74,8 @@ export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) 
           >
             <CrosshairIcon size={16} className="text-target-red" />
             <div className="flex flex-col leading-none">
-              <span className="font-bold">{selectedTarget?.id || '—'}</span>
-              <span className="text-[0.5rem] text-[#888]">{selectedTarget?.type || '—'}</span>
+              <span className="font-bold">{focusedTarget.id}</span>
+              <span className="text-[0.5rem] text-[#888]">{focusedTarget.type}</span>
             </div>
           </motion.div>
         </AnimatePresence>
@@ -67,8 +87,27 @@ export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) 
         <div className="px-4 py-2 border-r border-[#444] text-[#aaa]">
           Aimpoints ({TARGETS.length}x)
         </div>
-        <div className="px-4 py-2 text-acid-yellow font-bold hover:bg-[#333] cursor-pointer flex items-center gap-2">
-          Task Asset <span className="text-lg leading-none">→</span>
+        <div
+          onClick={() => {
+            if (isCurrentTask) {
+              onClearTask?.();
+              return;
+            }
+
+            if (canTask) {
+              onTaskSelection?.();
+            }
+          }}
+          className={`px-4 py-2 font-bold flex items-center gap-2 transition-colors ${
+            isCurrentTask
+              ? 'bg-target-red/15 text-target-red hover:bg-target-red hover:text-white cursor-pointer'
+              : canTask
+                ? 'text-acid-yellow hover:bg-[#333] cursor-pointer'
+                : 'text-[#666] cursor-not-allowed'
+          }`}
+        >
+          {isCurrentTask ? 'Clear Task' : canTask ? 'Task Asset' : 'Select Asset'}
+          <span className="text-lg leading-none">→</span>
         </div>
         {selectedTargetId && onSelectTarget && (
           <div
@@ -103,6 +142,7 @@ export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) 
         <div className="absolute inset-0 preserve-3d">
           {TARGETS.map((marker, i) => {
             const isSelected = selectedTargetId === marker.id || (!selectedTargetId && i === 0);
+            const isTasked = currentTask?.targetId === marker.id;
 
             return (
               <div
@@ -125,7 +165,7 @@ export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) 
                 >
                   {/* Glow effect — stronger when selected */}
                   <div className={`absolute inset-0 bg-target-red blur-xl transition-opacity rounded-full ${
-                    isSelected ? 'opacity-30' : 'opacity-0 group-hover:opacity-20'
+                    isTasked ? 'opacity-35' : isSelected ? 'opacity-30' : 'opacity-0 group-hover:opacity-20'
                   }`} />
 
                   <svg
@@ -153,8 +193,8 @@ export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) 
                       </linearGradient>
                     </defs>
 
-                    <polygon points="50,0 50,80 0,80" fill={`url(#grad-left-${i})`} stroke={isSelected ? "#ffaaaa" : "#ff6666"} strokeWidth={isSelected ? 2 : 1} />
-                    <polygon points="50,0 100,80 50,80" fill={`url(#grad-right-${i})`} stroke={isSelected ? "#ff6666" : "#ff3333"} strokeWidth={isSelected ? 2 : 1} />
+                    <polygon points="50,0 50,80 0,80" fill={`url(#grad-left-${i})`} stroke={isSelected || isTasked ? "#ffaaaa" : "#ff6666"} strokeWidth={isSelected || isTasked ? 2 : 1} />
+                    <polygon points="50,0 100,80 50,80" fill={`url(#grad-right-${i})`} stroke={isSelected || isTasked ? "#ff6666" : "#ff3333"} strokeWidth={isSelected || isTasked ? 2 : 1} />
                     <polygon points="50,160 0,80 50,80" fill={`url(#grad-bottom-left-${i})`} stroke="#cc0000" strokeWidth="1" />
                     <polygon points="50,160 100,80 50,80" fill={`url(#grad-bottom-right-${i})`} stroke="#990000" strokeWidth="1" />
 
@@ -168,10 +208,10 @@ export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) 
                   {/* Label */}
                   <div className="absolute top-[40%] left-full ml-3 -translate-y-1/2 whitespace-nowrap pointer-events-none">
                     <div className="flex items-center gap-2">
-                      <div className={`w-4 h-[1px] ${isSelected ? 'bg-acid-yellow' : 'bg-target-red'} opacity-50`} />
+                      <div className={`w-4 h-[1px] ${isTasked ? 'bg-target-red' : isSelected ? 'bg-acid-yellow' : 'bg-target-red'} opacity-50`} />
                       <div>
                         <div className={`text-[0.65rem] font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wider ${
-                          isSelected ? 'text-acid-yellow' : 'text-archival-white'
+                          isTasked ? 'text-target-red' : isSelected ? 'text-acid-yellow' : 'text-archival-white'
                         }`}>
                           {marker.id}
                         </div>
@@ -185,6 +225,23 @@ export function Targeting3D({ selectedTargetId = null, onSelectTarget }: Props) 
               </div>
             );
           })}
+        </div>
+      </div>
+
+      <div className="absolute bottom-4 left-4 z-50 max-w-[280px] border border-[#333] bg-black/80 p-3 font-mono">
+        <div className="text-[0.5rem] uppercase tracking-[0.22em] text-[#777]">Tasking Context</div>
+        <div className="mt-2 text-[0.75rem] text-archival-white">
+          Asset: <span className={selectedAssetId ? 'text-radar-blue' : 'text-[#666]'}>{selectedAssetId ?? 'Not selected'}</span>
+        </div>
+        <div className="mt-1 text-[0.75rem] text-archival-white">
+          Target: <span className={selectedTarget ? 'text-target-red' : 'text-[#666]'}>{selectedTarget?.id ?? 'Not selected'}</span>
+        </div>
+        <div className="mt-2 text-[0.6rem] leading-relaxed text-[#888]">
+          {isCurrentTask
+            ? 'Task is active. Clear it here or retask from COMMAND/RADAR.'
+            : canTask
+              ? 'Both ends of the chain are selected. Tasking will persist across modules.'
+              : 'Pick an asset in COMMAND or RADAR, then select an aimpoint here.'}
         </div>
       </div>
 

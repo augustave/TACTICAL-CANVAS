@@ -33,22 +33,24 @@ export function CommandCenter({ features, mission, actions }: Props) {
         <div className="flex-1 min-h-[400px]">
           <AirspaceRadar
             selectedAssetId={mission.selectedAssetId}
+            selectedTargetId={mission.selectedTargetId}
+            currentTask={mission.currentTask}
             onSelectAsset={actions.selectAsset}
           />
         </div>
         <div className="h-[300px]">
-          <GlobeWidget selectedAssetId={mission.selectedAssetId} />
+          <GlobeWidget mission={mission} />
         </div>
       </div>
 
       {/* Right Column: Details & Stats */}
       <div className="lg:col-span-3 flex flex-col gap-4 h-[calc(100vh-120px)]">
         <div className="flex-1 overflow-hidden">
-          <ChartWidget />
+          <ChartWidget mission={mission} />
         </div>
         <div className="flex-1 overflow-hidden">
           <AlertsWidget
-            selectedAssetId={mission.selectedAssetId}
+            mission={mission}
             onSelectAsset={actions.selectAsset}
           />
         </div>

@@ -52,6 +52,8 @@ export interface Alert {
   time: string;
   /** Optional link to the asset that caused the alert. */
   assetId?: string;
+  /** Optional link to the target implicated in the alert. */
+  targetId?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,6 +69,15 @@ export interface TargetMarker {
   dist: string;
 }
 
+export type MissionTaskStatus = 'ACTIVE';
+
+export interface MissionTask {
+  assetId: string;
+  targetId: string;
+  status: MissionTaskStatus;
+  createdAt: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Mission State — the shared selection context that flows across all modules
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,9 +87,13 @@ export interface MissionState {
   selectedAssetId: string | null;
   /** Currently selected target (from Targeting3D). null = nothing selected. */
   selectedTargetId: string | null;
+  /** Most recent cross-module task assignment. */
+  currentTask: MissionTask | null;
 }
 
 export interface MissionActions {
   selectAsset: (id: string | null) => void;
   selectTarget: (id: string | null) => void;
+  taskSelection: () => void;
+  clearTask: () => void;
 }

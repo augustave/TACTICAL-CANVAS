@@ -4,7 +4,9 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { generateCluster } from './utils/geo';
+import { MissionWorkflowBar } from './components/MissionWorkflowBar';
 import { WorldClocks } from './components/WorldClocks';
 import type { ActiveModule, FilterState, MissionState, MissionActions } from './types';
 import { CommandScreen } from './screens/CommandScreen';
@@ -28,6 +30,7 @@ export default function App() {
   const [missionState, setMissionState] = useState<MissionState>({
     selectedAssetId: null,
     selectedTargetId: null,
+    currentTask: null,
   });
 
   const missionActions: MissionActions = useMemo(() => ({
@@ -38,6 +41,25 @@ export default function App() {
     selectTarget: (id) => setMissionState(prev => ({
       ...prev,
       selectedTargetId: prev.selectedTargetId === id ? null : id,
+    })),
+    taskSelection: () => setMissionState(prev => {
+      if (!prev.selectedAssetId || !prev.selectedTargetId) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        currentTask: {
+          assetId: prev.selectedAssetId,
+          targetId: prev.selectedTargetId,
+          status: 'ACTIVE',
+          createdAt: new Date().toISOString(),
+        },
+      };
+    }),
+    clearTask: () => setMissionState(prev => ({
+      ...prev,
+      currentTask: null,
     })),
   }), []);
 
@@ -82,33 +104,51 @@ export default function App() {
           </button>
         ))}
       </div>
+      <MissionWorkflowBar activeModule={activeModule} mission={missionState} />
 
-      {activeModule === 'COMMAND' ? (
-        <CommandScreen
-          features={visibleFeatures}
-          mission={missionState}
-          actions={missionActions}
-        />
-      ) : activeModule === 'GEOINT' ? (
-        <GeointScreen
-          allFeatures={allFeatures}
-          visibleFeatures={visibleFeatures}
-          activeFilters={activeFilters}
-          toggleFilter={toggleFilter}
-        />
-      ) : activeModule === 'RADAR' ? (
-        <RadarScreen
-          features={visibleFeatures}
-          selectedAssetId={missionState.selectedAssetId}
-          onSelectAsset={missionActions.selectAsset}
-        />
-      ) : (
-        <TargetingScreen
-          features={visibleFeatures}
-          selectedTargetId={missionState.selectedTargetId}
-          onSelectTarget={missionActions.selectTarget}
-        />
-      )}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeModule}
+          initial={{ opacity: 0, y: 18, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -12, filter: 'blur(4px)' }}
+          transition={{ duration: 0.28, ease: 'easeOut' }}
+          className="flex-1"
+        >
+          {activeModule === 'COMMAND' ? (
+            <CommandScreen
+              features={visibleFeatures}
+              mission={missionState}
+              actions={missionActions}
+            />
+          ) : activeModule === 'GEOINT' ? (
+            <GeointScreen
+              allFeatures={allFeatures}
+              visibleFeatures={visibleFeatures}
+              activeFilters={activeFilters}
+              toggleFilter={toggleFilter}
+            />
+          ) : activeModule === 'RADAR' ? (
+            <RadarScreen
+              features={visibleFeatures}
+              selectedAssetId={missionState.selectedAssetId}
+              selectedTargetId={missionState.selectedTargetId}
+              currentTask={missionState.currentTask}
+              onSelectAsset={missionActions.selectAsset}
+            />
+          ) : (
+            <TargetingScreen
+              features={visibleFeatures}
+              selectedAssetId={missionState.selectedAssetId}
+              selectedTargetId={missionState.selectedTargetId}
+              currentTask={missionState.currentTask}
+              onSelectTarget={missionActions.selectTarget}
+              onTaskSelection={missionActions.taskSelection}
+              onClearTask={missionActions.clearTask}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

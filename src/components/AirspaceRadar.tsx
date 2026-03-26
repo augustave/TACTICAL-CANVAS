@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { ASSETS } from '../data';
+import type { MissionTask } from '../types';
 
 const CrosshairIcon = ({ size = 14, className = "" }: { size?: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
@@ -25,11 +26,19 @@ const NavigationIcon = ({ size = 14, className = "", style, fill }: { size?: num
 
 interface Props {
   selectedAssetId?: string | null;
+  selectedTargetId?: string | null;
+  currentTask?: MissionTask | null;
   onSelectAsset?: (id: string | null) => void;
 }
 
-export function AirspaceRadar({ selectedAssetId = null, onSelectAsset }: Props) {
+export function AirspaceRadar({
+  selectedAssetId = null,
+  selectedTargetId = null,
+  currentTask = null,
+  onSelectAsset,
+}: Props) {
   const selectedAsset = selectedAssetId ? ASSETS.find(a => a.id === selectedAssetId) : null;
+  const linkedTargetId = currentTask?.targetId ?? selectedTargetId;
 
   return (
     <motion.div
@@ -40,13 +49,13 @@ export function AirspaceRadar({ selectedAssetId = null, onSelectAsset }: Props) 
       {/* Top Assignment Bar — shows selected asset context */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center bg-black border border-[#333] text-archival-white text-xs whitespace-nowrap">
         <div className="px-3 py-1.5 text-[#888] border-r border-[#333] hidden sm:block">
-          {selectedAsset ? 'TRACKING:' : 'ASSIGN ASSET:'}
+          {currentTask ? 'TASKED TO:' : selectedAsset ? 'CORRELATING:' : 'ASSIGN ASSET:'}
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 border-r border-[#333] hover:bg-[#222] cursor-pointer">
           <CrosshairIcon size={14} className="text-target-red" />
-          <span>{selectedAsset ? selectedAsset.id : 'Transloading Facility'}</span>
-          {selectedAsset && (
-            <span className="text-[0.5rem] text-acid-yellow ml-1">HDG {selectedAsset.heading}°</span>
+          <span>{linkedTargetId ?? 'Select Target'}</span>
+          {currentTask && (
+            <span className="text-[0.5rem] text-acid-yellow ml-1">{currentTask.status}</span>
           )}
           <span className="text-[#666] ml-2">&gt;</span>
         </div>
@@ -110,6 +119,7 @@ export function AirspaceRadar({ selectedAssetId = null, onSelectAsset }: Props) 
       {ASSETS.map((asset) => {
         const isSelected = selectedAssetId === asset.id;
         const isActive = isSelected || asset.id === 'Dragnet71'; // Dragnet71 always active by default
+        const isTasked = currentTask?.assetId === asset.id;
 
         return (
           <div
@@ -130,6 +140,8 @@ export function AirspaceRadar({ selectedAssetId = null, onSelectAsset }: Props) 
                 className={
                   isSelected
                     ? "text-acid-yellow drop-shadow-[0_0_8px_rgba(229,255,0,1)]"
+                    : isTasked
+                      ? "text-target-red drop-shadow-[0_0_8px_rgba(208,2,27,1)]"
                     : isActive
                       ? "text-acid-yellow drop-shadow-[0_0_5px_rgba(229,255,0,0.8)]"
                       : "text-radar-blue drop-shadow-[0_0_5px_rgba(100,150,255,0.8)]"
@@ -137,8 +149,8 @@ export function AirspaceRadar({ selectedAssetId = null, onSelectAsset }: Props) 
                 style={{ transform: `rotate(${asset.heading}deg)` }}
                 fill="currentColor"
               />
-              {(isActive || isSelected) && (
-                <div className={`absolute inset-0 animate-ping rounded-full opacity-40 ${isSelected ? 'bg-acid-yellow' : 'bg-acid-yellow'}`} />
+              {(isActive || isSelected || isTasked) && (
+                <div className={`absolute inset-0 animate-ping rounded-full opacity-40 ${isTasked ? 'bg-target-red' : 'bg-acid-yellow'}`} />
               )}
               {/* Selection ring */}
               {isSelected && (
@@ -149,8 +161,16 @@ export function AirspaceRadar({ selectedAssetId = null, onSelectAsset }: Props) 
                   transition={{ type: 'spring', stiffness: 200 }}
                 />
               )}
+              {isTasked && (
+                <motion.div
+                  className="absolute -inset-5 border border-target-red rounded-full"
+                  initial={{ scale: 0.8, opacity: 0.2 }}
+                  animate={{ scale: 1.15, opacity: 0.7 }}
+                  transition={{ repeat: Infinity, repeatType: 'reverse', duration: 1.2 }}
+                />
+              )}
             </motion.div>
-            <div className={`flex flex-col items-center leading-none ${isSelected ? 'text-acid-yellow font-bold' : isActive ? 'text-acid-yellow font-bold' : 'text-archival-white'}`}>
+            <div className={`flex flex-col items-center leading-none ${isSelected ? 'text-acid-yellow font-bold' : isTasked ? 'text-target-red font-bold' : isActive ? 'text-acid-yellow font-bold' : 'text-archival-white'}`}>
               <span className="text-[0.6rem] tracking-wider bg-black/50 px-1 rounded">{asset.id}</span>
               <span className="text-[0.5rem] text-[#888] bg-black/50 px-1 rounded mt-0.5">
                 FL{Math.floor(200 + asset.heading * 0.5)}
@@ -162,7 +182,7 @@ export function AirspaceRadar({ selectedAssetId = null, onSelectAsset }: Props) 
 
       {/* Bottom Right Info */}
       <div className="absolute bottom-4 right-4 bg-black border border-[#333] px-3 py-1 text-archival-white text-[0.6rem] flex items-center gap-2">
-        <span>{new Date().toISOString().replace('T', ' ').slice(0, 19)}Z</span>
+        <span>{currentTask ? `TASK ${currentTask.assetId} -> ${currentTask.targetId}` : new Date().toISOString().replace('T', ' ').slice(0, 19) + 'Z'}</span>
         <div className="w-3 h-3 border border-[#666] flex items-center justify-center">
           <div className="w-1.5 h-1.5 bg-acid-yellow" />
         </div>
