@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { GeoJSONPanel } from '../components/GeoJSONPanel';
+import { LegacyTacticalCanvas } from '../components/LegacyTacticalCanvas';
 import { LayerPanel } from '../components/LayerPanel';
 import { TacticalCanvas } from '../components/TacticalCanvas';
 import type {
@@ -64,21 +66,61 @@ export function GeointScreen({
   onViewportChange,
   onFocusRequestHandled,
 }: Props) {
+  const [viewMode, setViewMode] = useState<'dual' | 'layer' | 'legacy'>('dual');
+
   return (
     <ModuleDeskLayout featureCount={featureCount} featureSummary={featureSummary}>
-      <TacticalCanvas
-        layers={layers}
-        activeLayerId={activeLayerId}
-        selectedFeatureRef={selectedFeatureRef}
-        hoveredFeatureRef={hoveredFeatureRef}
-        focusRequest={focusRequest}
-        viewport={viewport}
-        onActiveLayerChange={onSetActiveLayer}
-        onSelectedFeatureChange={onSelectedFeatureChange}
-        onHoveredFeatureChange={onHoveredFeatureChange}
-        onViewportChange={onViewportChange}
-        onFocusRequestHandled={onFocusRequestHandled}
-      />
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-mono text-[0.58rem] uppercase tracking-[0.24em] text-[#7d8a90]">
+          GEOINT Surfaces
+        </div>
+        <div className="flex border border-[#2a3338] bg-[#0b1012]">
+          {([
+            ['dual', 'Dual'],
+            ['layer', 'Layer'],
+            ['legacy', 'Legacy'],
+          ] as const).map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setViewMode(mode)}
+              className={`px-3 py-2 font-mono text-[0.55rem] uppercase tracking-[0.22em] transition-colors ${
+                viewMode === mode ? 'bg-acid-yellow text-ink' : 'text-archival-white hover:bg-[#151b1f]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className={`grid gap-4 ${viewMode === 'dual' ? 'xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:items-start' : ''}`}>
+        {viewMode !== 'legacy' && (
+          <TacticalCanvas
+            layers={layers}
+            activeLayerId={activeLayerId}
+            selectedFeatureRef={selectedFeatureRef}
+            hoveredFeatureRef={hoveredFeatureRef}
+            focusRequest={focusRequest}
+            viewport={viewport}
+            onActiveLayerChange={onSetActiveLayer}
+            onSelectedFeatureChange={onSelectedFeatureChange}
+            onHoveredFeatureChange={onHoveredFeatureChange}
+            onViewportChange={onViewportChange}
+            onFocusRequestHandled={onFocusRequestHandled}
+          />
+        )}
+
+        {viewMode !== 'layer' && (
+          <LegacyTacticalCanvas
+            layers={layers}
+            activeLayerId={activeLayerId}
+            selectedFeatureRef={selectedFeatureRef}
+            onActiveLayerChange={onSetActiveLayer}
+            onSelectedFeatureChange={onSelectedFeatureChange}
+          />
+        )}
+      </div>
       <div className="grid gap-4 xl:grid-cols-[minmax(280px,0.95fr)_minmax(0,1.05fr)]">
         <LayerPanel
           layers={layers}

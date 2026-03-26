@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import maplibregl, { type MapGeoJSONFeature, type Map as MapLibreMap, type StyleSpecification } from 'maplibre-gl';
+import maplibregl, { type Map as MapLibreMap, type StyleSpecification } from 'maplibre-gl';
 import type { LayerDefinition, MapFeatureRef, MapFocusRequest, MapViewportState } from '../types';
 import { computeFeatureCollectionBounds, computeFeatureBounds, getFeatureByRef, getLayerById } from '../utils/geojson';
 
@@ -54,6 +54,21 @@ function fitBoundsFromBox(map: MapLibreMap, bbox: [number, number, number, numbe
   });
 }
 
+function padBBox(bbox: [number, number, number, number], factor = 0.18): [number, number, number, number] {
+  const [minLng, minLat, maxLng, maxLat] = bbox;
+  const lngSpan = maxLng - minLng;
+  const latSpan = maxLat - minLat;
+  const lngPad = Math.max(lngSpan * factor, 0.01);
+  const latPad = Math.max(latSpan * factor, 0.01);
+
+  return [
+    minLng - lngPad,
+    minLat - latPad,
+    maxLng + lngPad,
+    maxLat + latPad,
+  ];
+}
+
 export function TacticalCanvas({
   layers,
   activeLayerId,
@@ -69,6 +84,8 @@ export function TacticalCanvas({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const initialViewportRef = useRef(viewport);
+  const hasFramedInitialViewRef = useRef(false);
   const runtimeLayerIdsRef = useRef<string[]>([]);
   const runtimeSourceIdsRef = useRef<string[]>([]);
   const interactiveLayerIdsRef = useRef<string[]>([]);
@@ -102,16 +119,18 @@ export function TacticalCanvas({
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: BASE_STYLE,
-      center: viewport.center,
-      zoom: viewport.zoom,
-      pitch: viewport.pitch,
-      bearing: viewport.bearing,
+      center: initialViewportRef.current.center,
+      zoom: initialViewportRef.current.zoom,
+      pitch: 0,
+      bearing: 0,
       attributionControl: false,
+      maxPitch: 0,
+      renderWorldCopies: false,
     });
 
-    map.addControl(new maplibregl.NavigationControl({ showZoom: true, visualizePitch: true }), 'bottom-right');
-    map.dragRotate.enable();
-    map.touchZoomRotate.enableRotation();
+    map.addControl(new maplibregl.NavigationControl({ showZoom: true, visualizePitch: false }), 'bottom-right');
+    map.dragRotate.disable();
+    map.touchZoomRotate.disableRotation();
 
     const syncViewport = () => {
       const center = map.getCenter();
@@ -172,11 +191,31 @@ export function TacticalCanvas({
 
     mapRef.current = map;
 
+    const resizeMap = () => {
+      map.resize();
+    };
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined' && containerRef.current
+      ? new ResizeObserver(() => {
+          resizeMap();
+        })
+      : null;
+
+    if (resizeObserver && containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    const resizeFrame = window.requestAnimationFrame(resizeMap);
+    window.addEventListener('resize', resizeMap);
+
     return () => {
+      window.cancelAnimationFrame(resizeFrame);
+      window.removeEventListener('resize', resizeMap);
+      resizeObserver?.disconnect();
       map.remove();
       mapRef.current = null;
     };
-  }, [interactiveLayerIds, onActiveLayerChange, onHoveredFeatureChange, onSelectedFeatureChange, onViewportChange, viewport]);
+  }, [onActiveLayerChange, onHoveredFeatureChange, onSelectedFeatureChange, onViewportChange]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -207,6 +246,32 @@ export function TacticalCanvas({
         .filter((layer) => layer.visible)
         .sort((a, b) => a.zIndex - b.zIndex);
 
+      const sceneBounds = sortedLayers
+        .map((layer) => computeFeatureCollectionBounds(layer.data))
+        .filter((bbox): bbox is [number, number, number, number] => Array.isArray(bbox))
+        .reduce<[number, number, number, number] | null>((acc, bbox) => {
+          if (!acc) {
+            return [...bbox] as [number, number, number, number];
+          }
+
+          return [
+            Math.min(acc[0], bbox[0]),
+            Math.min(acc[1], bbox[1]),
+            Math.max(acc[2], bbox[2]),
+            Math.max(acc[3], bbox[3]),
+          ];
+        }, null);
+
+      if (sceneBounds) {
+        const paddedBounds = padBBox(sceneBounds);
+        map.setMaxBounds([
+          [paddedBounds[0], paddedBounds[1]],
+          [paddedBounds[2], paddedBounds[3]],
+        ]);
+      } else {
+        map.setMaxBounds(null);
+      }
+
       sortedLayers.forEach((layer) => {
         const sourceId = getSourceId(layer.id);
         map.addSource(sourceId, {
@@ -223,7 +288,7 @@ export function TacticalCanvas({
             source: sourceId,
             minzoom: layer.minZoom,
             maxzoom: layer.maxZoom,
-            filter: ['==', '$type', 'Polygon'],
+            filter: ['==', ['geometry-type'], 'Polygon'],
             paint: {
               'fill-color': layer.style.color,
               'fill-opacity': layer.opacity * (layer.style.fillOpacity ?? 0.22),
@@ -241,7 +306,7 @@ export function TacticalCanvas({
             source: sourceId,
             minzoom: layer.minZoom,
             maxzoom: layer.maxZoom,
-            filter: ['==', '$type', 'LineString'],
+            filter: ['==', ['geometry-type'], 'LineString'],
             paint: {
               'line-color': layer.style.color,
               'line-opacity': layer.opacity,
@@ -260,7 +325,7 @@ export function TacticalCanvas({
             source: sourceId,
             minzoom: layer.minZoom,
             maxzoom: layer.maxZoom,
-            filter: ['==', '$type', 'Point'],
+            filter: ['==', ['geometry-type'], 'Point'],
             paint: {
               'circle-radius': layer.style.radius ?? 5,
               'circle-color': layer.style.color,
@@ -281,7 +346,7 @@ export function TacticalCanvas({
               id: selectedFillId,
               type: 'fill',
               source: sourceId,
-              filter: ['all', ['==', '$type', 'Polygon'], ['==', '$id', selectedId]],
+              filter: ['all', ['==', ['geometry-type'], 'Polygon'], ['==', '$id', selectedId]],
               paint: {
                 'fill-color': '#E5FF00',
                 'fill-opacity': 0.36,
@@ -296,7 +361,7 @@ export function TacticalCanvas({
               id: selectedLineId,
               type: 'line',
               source: sourceId,
-              filter: ['all', ['==', '$type', 'LineString'], ['==', '$id', selectedId]],
+              filter: ['all', ['==', ['geometry-type'], 'LineString'], ['==', '$id', selectedId]],
               paint: {
                 'line-color': '#E5FF00',
                 'line-width': (layer.style.width ?? 3) + 2,
@@ -311,7 +376,7 @@ export function TacticalCanvas({
               id: selectedCircleId,
               type: 'circle',
               source: sourceId,
-              filter: ['all', ['==', '$type', 'Point'], ['==', '$id', selectedId]],
+              filter: ['all', ['==', ['geometry-type'], 'Point'], ['==', '$id', selectedId]],
               paint: {
                 'circle-radius': (layer.style.radius ?? 5) + 3,
                 'circle-color': '#E5FF00',
@@ -323,6 +388,15 @@ export function TacticalCanvas({
           }
         }
       });
+
+      if (!hasFramedInitialViewRef.current && sortedLayers.length > 0) {
+        const activeLayer = sortedLayers.find((layer) => layer.id === activeLayerId) ?? sortedLayers[sortedLayers.length - 1];
+        const bbox = computeFeatureCollectionBounds(activeLayer.data);
+        if (bbox) {
+          fitBoundsFromBox(map, padBBox(bbox));
+          hasFramedInitialViewRef.current = true;
+        }
+      }
     };
 
     if (map.loaded()) {
@@ -336,7 +410,7 @@ export function TacticalCanvas({
 
     map.once('load', handleLoad);
     return clearRuntimeLayers;
-  }, [layers, selectedFeatureRef]);
+  }, [activeLayerId, layers, selectedFeatureRef]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -371,6 +445,7 @@ export function TacticalCanvas({
       className="relative w-full overflow-hidden border-2 border-ink bg-[#0c1113] shadow-[4px_6px_15px_rgba(0,0,0,0.6)]"
     >
       <div ref={containerRef} className="h-[560px] w-full" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.05),transparent_28%),linear-gradient(180deg,rgba(74,144,226,0.06),transparent_22%),repeating-linear-gradient(0deg,rgba(255,255,255,0.018)_0,rgba(255,255,255,0.018)_1px,transparent_1px,transparent_42px),repeating-linear-gradient(90deg,rgba(255,255,255,0.018)_0,rgba(255,255,255,0.018)_1px,transparent_1px,transparent_42px)]" />
 
       <div className="pointer-events-none absolute left-3 top-3 z-10 border border-[#2d3940] bg-black/55 px-3 py-2 font-mono text-[0.56rem] uppercase tracking-[0.22em] text-[#8ea0a8] backdrop-blur-sm">
         <div>Prototype Layer Engine</div>
