@@ -1,9 +1,10 @@
 import { Targeting3D } from '../components/Targeting3D';
-import type { GeoFeature, MissionTask } from '../types';
+import type { FeatureSummary, MissionTask } from '../types';
 import { ModuleDeskLayout } from './ModuleDeskLayout';
 
 interface Props {
-  features: GeoFeature[];
+  featureCount: number;
+  featureSummary: FeatureSummary;
   selectedAssetId: string | null;
   selectedTargetId: string | null;
   currentTask: MissionTask | null;
@@ -13,7 +14,8 @@ interface Props {
 }
 
 export function TargetingScreen({
-  features,
+  featureCount,
+  featureSummary,
   selectedAssetId,
   selectedTargetId,
   currentTask,
@@ -22,7 +24,7 @@ export function TargetingScreen({
   onClearTask,
 }: Props) {
   return (
-    <ModuleDeskLayout features={features}>
+    <ModuleDeskLayout featureCount={featureCount} featureSummary={featureSummary}>
       <Targeting3D
         selectedAssetId={selectedAssetId}
         selectedTargetId={selectedTargetId}

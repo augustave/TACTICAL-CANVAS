@@ -21,6 +21,138 @@ export type FilterState = Record<FeatureType, boolean>;
 /** The four top-level operational modules. */
 export type ActiveModule = 'GEOINT' | 'RADAR' | 'TARGETING' | 'COMMAND';
 
+export type GeoJsonPrimitive = string | number | boolean | null;
+export type GeoJsonPropertyValue = GeoJsonPrimitive | GeoJsonPrimitive[] | Record<string, GeoJsonPrimitive>;
+
+export interface LayerFeatureProperties {
+  category?: FeatureType;
+  name?: string;
+  description?: string;
+  assetId?: string;
+  targetId?: string;
+  timestamp?: string;
+  [key: string]: GeoJsonPropertyValue | undefined;
+}
+
+export type GeoJsonPosition = [number, number] | [number, number, number];
+export type BBox = [number, number, number, number];
+
+export interface GeoJsonPointGeometry {
+  type: 'Point';
+  coordinates: GeoJsonPosition;
+}
+
+export interface GeoJsonMultiPointGeometry {
+  type: 'MultiPoint';
+  coordinates: GeoJsonPosition[];
+}
+
+export interface GeoJsonLineStringGeometry {
+  type: 'LineString';
+  coordinates: GeoJsonPosition[];
+}
+
+export interface GeoJsonMultiLineStringGeometry {
+  type: 'MultiLineString';
+  coordinates: GeoJsonPosition[][];
+}
+
+export interface GeoJsonPolygonGeometry {
+  type: 'Polygon';
+  coordinates: GeoJsonPosition[][];
+}
+
+export interface GeoJsonMultiPolygonGeometry {
+  type: 'MultiPolygon';
+  coordinates: GeoJsonPosition[][][];
+}
+
+export type GeoJsonGeometry =
+  | GeoJsonPointGeometry
+  | GeoJsonMultiPointGeometry
+  | GeoJsonLineStringGeometry
+  | GeoJsonMultiLineStringGeometry
+  | GeoJsonPolygonGeometry
+  | GeoJsonMultiPolygonGeometry;
+
+export interface GeoJsonFeature<P extends LayerFeatureProperties = LayerFeatureProperties> {
+  type: 'Feature';
+  id: string;
+  geometry: GeoJsonGeometry;
+  properties: P;
+  bbox?: BBox;
+}
+
+export interface GeoJsonFeatureCollection<P extends LayerFeatureProperties = LayerFeatureProperties> {
+  type: 'FeatureCollection';
+  features: GeoJsonFeature<P>[];
+  bbox?: BBox;
+}
+
+export type LayerSourceType = 'sample' | 'geojson-file' | 'geojson-url';
+export type LayerDisplayMode = 'circle' | 'line' | 'fill';
+
+export interface LayerStyle {
+  color: string;
+  outlineColor?: string;
+  radius?: number;
+  width?: number;
+  fillOpacity?: number;
+  lineDasharray?: number[];
+}
+
+export interface LayerSourceConfig {
+  label: string;
+  fileName?: string;
+  url?: string;
+  importedAt?: string;
+}
+
+export interface LayerDefinition<P extends LayerFeatureProperties = LayerFeatureProperties> {
+  id: string;
+  name: string;
+  sourceType: LayerSourceType;
+  sourceConfig: LayerSourceConfig;
+  data: GeoJsonFeatureCollection<P>;
+  displayModes: LayerDisplayMode[];
+  style: LayerStyle;
+  visible: boolean;
+  opacity: number;
+  zIndex: number;
+  locked: boolean;
+  minZoom: number;
+  maxZoom: number;
+  status: 'ready' | 'loading' | 'error';
+  error?: string;
+}
+
+export interface MapFeatureRef {
+  layerId: string;
+  featureId: string;
+}
+
+export interface MapViewportState {
+  center: [number, number];
+  zoom: number;
+  bearing: number;
+  pitch: number;
+}
+
+export interface MapFocusRequest {
+  kind: 'layer' | 'feature';
+  layerId: string;
+  featureId?: string;
+  token: number;
+}
+
+export interface FeatureSummary {
+  total: number;
+  infrastructure: number;
+  pathway: number;
+  organic: number;
+  zone: number;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Asset Model
 // ─────────────────────────────────────────────────────────────────────────────

@@ -5,15 +5,15 @@ import { AssetListWidget } from './AssetListWidget';
 import { ChartWidget } from './ChartWidget';
 import { AlertsWidget } from './AlertsWidget';
 import { StatsBar } from './StatsBar';
-import type { GeoFeature, MissionState, MissionActions } from '../types';
+import type { FeatureSummary, MissionState, MissionActions } from '../types';
 
 interface Props {
-  features: GeoFeature[];
+  featureSummary: FeatureSummary;
   mission: MissionState;
   actions: MissionActions;
 }
 
-export function CommandCenter({ features, mission, actions }: Props) {
+export function CommandCenter({ featureSummary, mission, actions }: Props) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -55,7 +55,7 @@ export function CommandCenter({ features, mission, actions }: Props) {
           />
         </div>
         <div className="h-[100px]">
-          <StatsBar features={features} />
+          <StatsBar summary={featureSummary} />
         </div>
       </div>
     </motion.div>

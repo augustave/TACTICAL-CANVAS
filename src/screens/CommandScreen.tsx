@@ -1,16 +1,16 @@
 import { CommandCenter } from '../components/CommandCenter';
-import type { GeoFeature, MissionActions, MissionState } from '../types';
+import type { FeatureSummary, MissionActions, MissionState } from '../types';
 
 interface Props {
-  features: GeoFeature[];
+  featureSummary: FeatureSummary;
   mission: MissionState;
   actions: MissionActions;
 }
 
-export function CommandScreen({ features, mission, actions }: Props) {
+export function CommandScreen({ featureSummary, mission, actions }: Props) {
   return (
     <CommandCenter
-      features={features}
+      featureSummary={featureSummary}
       mission={mission}
       actions={actions}
     />

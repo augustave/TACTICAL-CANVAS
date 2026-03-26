@@ -1,13 +1,13 @@
 import { motion } from 'motion/react';
-import type { GeoFeature } from '../types';
+import type { FeatureSummary } from '../types';
 
-export function StatsBar({ features }: { features: GeoFeature[] }) {
+export function StatsBar({ summary }: { summary: FeatureSummary }) {
   const stats = [
-    { label: 'Total Features', value: features.length, bg: 'bg-ink', text: 'text-archival-white' },
-    { label: 'Infrastructure', value: features.filter(f => f.type === 'infrastructure').length, bg: 'bg-terrain-grey', text: 'text-archival-white' },
-    { label: 'Pathways', value: features.filter(f => f.type === 'pathway').length, bg: 'bg-kraft-brown', text: 'text-ink' },
-    { label: 'Organic', value: features.filter(f => f.type === 'organic').length, bg: 'bg-leather', text: 'text-archival-white' },
-    { label: 'Zones', value: features.filter(f => f.type === 'zone').length, bg: 'bg-acid-yellow', text: 'text-ink' },
+    { label: 'Total Features', value: summary.total, bg: 'bg-ink', text: 'text-archival-white' },
+    { label: 'Infrastructure', value: summary.infrastructure, bg: 'bg-terrain-grey', text: 'text-archival-white' },
+    { label: 'Pathways', value: summary.pathway, bg: 'bg-kraft-brown', text: 'text-ink' },
+    { label: 'Organic', value: summary.organic, bg: 'bg-leather', text: 'text-archival-white' },
+    { label: 'Zones', value: summary.zone, bg: 'bg-acid-yellow', text: 'text-ink' },
   ];
 
   return (
