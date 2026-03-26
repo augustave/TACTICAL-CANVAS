@@ -7,53 +7,31 @@ test('GEOINT stays interactive during drag, zoom, and layer actions', async ({ p
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'GEOINT' }).click();
+  for (const moduleName of ['GEOINT', 'COMMAND', 'GEOINT', 'RADAR', 'GEOINT', 'TARGETING', 'GEOINT']) {
+    await page.getByRole('button', { name: moduleName }).click();
+  }
 
-  await expect(page.getByTestId('geoint-legacy-surface')).toBeVisible();
+  await expect(page.getByTestId('geoint-surface')).toBeVisible();
   await expect(page.getByText('Layer Inspector')).toBeVisible();
+  await expect(page.getByText('2D Surface Stable / WebGL Path Removed')).toBeVisible();
 
-  const layerEngineFallback = page.getByText('Layer Engine Crashed');
-  if (await layerEngineFallback.isVisible().catch(() => false)) {
-    await expect(page.getByRole('button', { name: 'Reload Layer Engine' })).toBeVisible();
-    expect(pageErrors).toEqual([]);
-    return;
-  }
-
-  await expect(page.getByTestId('geoint-layer-engine')).toBeVisible();
-
-  const canvas = page.locator('.maplibregl-canvas').first();
-  await expect(canvas).toBeVisible();
-
-  const box = await canvas.boundingBox();
+  const surface = page.getByTestId('geoint-surface');
+  const box = await surface.boundingBox();
   if (!box) {
-    throw new Error('Map canvas bounding box unavailable.');
+    throw new Error('2D GEOINT surface bounding box unavailable.');
   }
 
-  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.55);
+  await page.mouse.move(box.x + box.width * 0.52, box.y + box.height * 0.48);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.45, { steps: 24 });
+  await page.mouse.move(box.x + box.width * 0.28, box.y + box.height * 0.42, { steps: 24 });
   await page.mouse.up();
-  await page.mouse.wheel(0, -500);
+  await page.mouse.wheel(0, -520);
 
   await page.getByRole('button', { name: 'Fit Active' }).click();
+  await page.getByRole('button', { name: 'Zoom +' }).click();
+  await page.getByRole('button', { name: 'Reset' }).click();
   await page.getByRole('button', { name: 'Visible' }).first().click();
   await page.getByRole('button', { name: 'Hidden' }).first().click();
-
-  await expect(page.getByText('Legacy tactical view remains available.')).toHaveCount(0);
-  expect(pageErrors).toEqual([]);
-});
-
-test('GEOINT keeps legacy pane alive when the layer engine fails closed', async ({ page }) => {
-  const pageErrors: string[] = [];
-  page.on('pageerror', (error) => {
-    pageErrors.push(error.message);
-  });
-
-  await page.goto('/?geointMapFailure=1');
-  await page.getByRole('button', { name: 'GEOINT' }).click();
-
-  await expect(page.getByTestId('geoint-legacy-surface')).toBeVisible();
-  await expect(page.getByText('Layer Engine Halted')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Reload Layer Engine' })).toBeVisible();
+  await expect(page.getByText('2D Tactical Surface')).toBeVisible();
   expect(pageErrors).toEqual([]);
 });

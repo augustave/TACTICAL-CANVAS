@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import type { LayerDefinition, MapFeatureRef, MapViewportState } from '../types';
+import type { GeointViewportState, LayerDefinition, MapFeatureRef } from '../types';
 import { getGeometryCounts } from '../utils/geojson';
 
 interface Props {
   layers: LayerDefinition[];
   activeLayerId: string | null;
   selectedFeatureRef: MapFeatureRef | null;
-  viewport: MapViewportState;
+  viewport: GeointViewportState;
   statusMessage: string | null;
   onSetActiveLayer: (layerId: string) => void;
   onToggleVisibility: (layerId: string) => void;
@@ -50,7 +50,7 @@ export function LayerPanel({
         </div>
         <div className="text-right font-mono text-[0.55rem] text-[#728089]">
           <div>ZOOM {viewport.zoom.toFixed(1)}</div>
-          <div>BRG {viewport.bearing.toFixed(0)}°</div>
+          <div>CTR {viewport.center[1].toFixed(3)}, {viewport.center[0].toFixed(3)}</div>
         </div>
       </div>
 

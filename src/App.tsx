@@ -13,7 +13,6 @@ import type {
   LayerDefinition,
   MapFeatureRef,
   MapFocusRequest,
-  MapViewportState,
   MissionActions,
   MissionState,
 } from './types';
@@ -85,12 +84,6 @@ export default function App() {
   const [geoLayers, setGeoLayers] = useState<LayerDefinition[]>(() => buildInitialGeoLayers(allFeatures));
   const [activeLayerId, setActiveLayerId] = useState<string | null>(() => buildInitialGeoLayers(allFeatures)[0]?.id ?? null);
   const [selectedFeatureRef, setSelectedFeatureRef] = useState<MapFeatureRef | null>(null);
-  const initialMapViewport: MapViewportState = {
-    center: [-73.965, 40.745],
-    zoom: 12.35,
-    bearing: 0,
-    pitch: 0,
-  };
   const [focusRequest, setFocusRequest] = useState<MapFocusRequest | null>(null);
   const [geoIntStatus, setGeoIntStatus] = useState<string | null>('Loaded 5 prototype layers');
 
@@ -264,7 +257,6 @@ export default function App() {
               selectedFeatureRef={selectedFeatureRef}
               selectedFeature={selectedFeature}
               activeLayer={activeLayer}
-              initialViewport={initialMapViewport}
               focusRequest={focusRequest}
               statusMessage={geoIntStatus}
               onSetActiveLayer={setActiveLayerId}

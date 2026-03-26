@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// TacticalCanvas — Shared Type Contracts
+// GEOINT Surface — Shared Type Contracts
 // ─────────────────────────────────────────────────────────────────────────────
 // Every widget in this system shares these types. No component should define
 // its own `any`-typed feature, asset, or alert shape.
@@ -131,14 +131,11 @@ export interface MapFeatureRef {
   featureId: string;
 }
 
-export interface MapViewportState {
+export interface GeointViewportState {
+  bbox: BBox;
   center: [number, number];
   zoom: number;
-  bearing: number;
-  pitch: number;
 }
-
-export type MapHealthState = 'ready' | 'degraded' | 'failed';
 
 export interface MapFocusRequest {
   kind: 'layer' | 'feature';

@@ -1,18 +1,18 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
-import type { LayerDefinition, MapFeatureRef, MapViewportState } from '../types';
+import type { LayerDefinition, MapFeatureRef } from '../types';
 import { normalizeGeoJsonInput, getFeatureByRef, getDefaultLayerStyle, getDisplayModesForCollection } from '../utils/geojson';
 
-vi.mock('../components/TacticalCanvas', async () => {
+vi.mock('../components/GeointSurface', async () => {
   const ReactModule = await import('react');
 
   return {
-    TacticalCanvas: ({ onSelectedFeatureChange }: { onSelectedFeatureChange: (featureRef: MapFeatureRef | null) => void }) => {
+    GeointSurface: ({ onSelectedFeatureChange }: { onSelectedFeatureChange: (featureRef: MapFeatureRef | null) => void }) => {
       const [hoverTicks, setHoverTicks] = ReactModule.useState(0);
 
       return (
-        <div data-testid="mock-tactical-canvas">
+        <div data-testid="mock-geoint-surface">
           <button type="button" onClick={() => setHoverTicks((count) => count + 1)}>
             Local Hover
           </button>
@@ -26,18 +26,7 @@ vi.mock('../components/TacticalCanvas', async () => {
   };
 });
 
-vi.mock('../components/LegacyTacticalCanvas', () => ({
-  LegacyTacticalCanvas: () => <div data-testid="mock-legacy-surface">Legacy Surface</div>,
-}));
-
 import { GeointScreen } from './GeointScreen';
-
-const initialViewport: MapViewportState = {
-  center: [-73.965, 40.745],
-  zoom: 12.35,
-  bearing: 0,
-  pitch: 0,
-};
 
 function makeLayer(): LayerDefinition {
   const data = normalizeGeoJsonInput({
@@ -95,7 +84,6 @@ function Harness() {
         selectedFeatureRef={selectedFeatureRef}
         selectedFeature={selectedFeature}
         activeLayer={layer}
-        initialViewport={initialViewport}
         focusRequest={null}
         statusMessage="Ready"
         onSetActiveLayer={() => {}}
@@ -116,8 +104,7 @@ function Harness() {
 test('local hover does not force parent GEOINT rerender while selection still updates inspector', () => {
   render(<Harness />);
 
-  expect(screen.getByTestId('mock-tactical-canvas')).toBeTruthy();
-  expect(screen.getByTestId('mock-legacy-surface')).toBeTruthy();
+  expect(screen.getByTestId('mock-geoint-surface')).toBeTruthy();
   expect(screen.getByTestId('render-count').textContent).toBe('1');
   expect(screen.getByText('No feature selected')).toBeTruthy();
 

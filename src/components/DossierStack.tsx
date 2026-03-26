@@ -236,7 +236,7 @@ export function DossierStack({ featureCount }: { featureCount: number }) {
           onClick={() => setJunctionOpen((open) => !open)}
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
-          className="relative flex h-[108px] w-[108px] items-center justify-center rounded-full border border-acid-yellow/45 bg-[radial-gradient(circle_at_center,rgba(229,255,0,0.16),rgba(8,13,14,0.94)_64%)] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_12px_24px_rgba(0,0,0,0.5),0_0_22px_rgba(229,255,0,0.16)] backdrop-blur-sm"
+          className="relative flex h-[108px] w-[108px] items-center justify-center rounded-full border border-acid-yellow/45 bg-[radial-gradient(circle_at_center,rgba(229,255,0,0.16),rgba(8,13,14,0.94)_64%)] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_12px_24px_rgba(0,0,0,0.5),0_0_22px_rgba(229,255,0,0.16)]"
         >
           <motion.div
             animate={{ rotate: 360 }}
@@ -285,7 +285,7 @@ export function DossierStack({ featureCount }: { featureCount: number }) {
             animate={{ opacity: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, x: -12, y: 4 }}
             transition={{ duration: 0.24, ease: 'easeOut' }}
-            className="absolute left-[8%] top-[44%] z-[90] w-[270px] border border-[#2b3a40] bg-[rgba(9,13,16,0.94)] p-3 text-archival-white shadow-[0_16px_32px_rgba(0,0,0,0.45)] backdrop-blur-sm"
+            className="absolute left-[8%] top-[44%] z-[90] w-[270px] border border-[#2b3a40] bg-[rgba(9,13,16,0.94)] p-3 text-archival-white shadow-[0_16px_32px_rgba(0,0,0,0.45)]"
           >
             <div className="flex items-start justify-between gap-3">
               <div>

@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { GeoJSONPanel } from '../components/GeoJSONPanel';
-import { LegacyTacticalCanvas } from '../components/LegacyTacticalCanvas';
+import { GeointSurface } from '../components/GeointSurface';
 import { LayerPanel } from '../components/LayerPanel';
-import { MapPaneErrorBoundary } from '../components/MapPaneErrorBoundary';
-import { TacticalCanvas } from '../components/TacticalCanvas';
 import type {
   FeatureSummary,
+  GeointViewportState,
   GeoJsonFeature,
   LayerDefinition,
   MapFeatureRef,
   MapFocusRequest,
-  MapHealthState,
-  MapViewportState,
 } from '../types';
 import { ModuleDeskLayout } from './ModuleDeskLayout';
 
@@ -23,7 +20,6 @@ interface Props {
   selectedFeatureRef: MapFeatureRef | null;
   selectedFeature: GeoJsonFeature | null;
   activeLayer: LayerDefinition | null;
-  initialViewport: MapViewportState;
   focusRequest: MapFocusRequest | null;
   statusMessage: string | null;
   onSetActiveLayer: (layerId: string) => void;
@@ -46,7 +42,6 @@ export function GeointScreen({
   selectedFeatureRef,
   selectedFeature,
   activeLayer,
-  initialViewport,
   focusRequest,
   statusMessage,
   onSetActiveLayer,
@@ -60,28 +55,11 @@ export function GeointScreen({
   onSelectedFeatureChange,
   onFocusRequestHandled,
 }: Props) {
-  const [viewportSnapshot, setViewportSnapshot] = useState<MapViewportState>(initialViewport);
-  const [mapHealth, setMapHealth] = useState<MapHealthState>('ready');
-  const [mapHealthDetail, setMapHealthDetail] = useState<string | null>(null);
-  const [reloadNonce, setReloadNonce] = useState(0);
-
-  const handleMapHealthChange = (state: MapHealthState, details?: string) => {
-    setMapHealth(state);
-    setMapHealthDetail(details ?? null);
-  };
-
-  const handleReloadPane = () => {
-    setReloadNonce((current) => current + 1);
-    setMapHealth('ready');
-    setMapHealthDetail(null);
-  };
-
-  const healthTone =
-    mapHealth === 'failed'
-      ? 'border-alert-red/45 bg-alert-red/10 text-alert-red'
-      : mapHealth === 'degraded'
-        ? 'border-flare-orange/45 bg-flare-orange/10 text-flare-orange'
-        : 'border-radar-blue/35 bg-radar-blue/10 text-radar-blue';
+  const [viewportSnapshot, setViewportSnapshot] = useState<GeointViewportState>({
+    bbox: [-73.995, 40.71, -73.93, 40.78],
+    center: [-73.9625, 40.745],
+    zoom: 1,
+  });
 
   return (
     <ModuleDeskLayout featureCount={featureCount} featureSummary={featureSummary}>
@@ -89,57 +67,24 @@ export function GeointScreen({
         <div>
           <div className="font-mono text-[0.58rem] uppercase tracking-[0.24em] text-[#7d8a90]">GEOINT Surfaces</div>
           <div className="mt-1 font-mono text-[0.54rem] uppercase tracking-[0.22em] text-[#9aa8ad]">
-            Dual surfaces locked for stability
+            Primary 2D operational renderer
           </div>
         </div>
-        <div className={`border px-3 py-2 font-mono text-[0.55rem] uppercase tracking-[0.22em] ${healthTone}`}>
-          Layer Engine {mapHealth}
-          {mapHealthDetail ? ` / ${mapHealthDetail}` : ''}
+        <div className="border border-radar-blue/35 bg-radar-blue/10 px-3 py-2 font-mono text-[0.55rem] uppercase tracking-[0.22em] text-radar-blue">
+          2D Surface Stable / WebGL Path Removed
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:items-start">
-        <MapPaneErrorBoundary
-          resetKey={reloadNonce}
-          onError={(error) => handleMapHealthChange('failed', error.message)}
-          fallback={
-            <div className="flex h-[560px] items-center justify-center border-2 border-alert-red/40 bg-[#0b1012] p-6 text-center shadow-[4px_6px_15px_rgba(0,0,0,0.6)]">
-              <div className="max-w-[340px] font-mono text-archival-white">
-                <div className="text-[0.56rem] uppercase tracking-[0.24em] text-alert-red">Layer Engine Crashed</div>
-                <div className="mt-3 text-[0.92rem] font-semibold">Legacy tactical pane is still available.</div>
-                <button
-                  type="button"
-                  onClick={handleReloadPane}
-                  className="mt-4 border border-acid-yellow/45 px-3 py-2 text-[0.58rem] uppercase tracking-[0.22em] text-acid-yellow transition-colors hover:bg-acid-yellow hover:text-ink"
-                >
-                  Reload Layer Engine
-                </button>
-              </div>
-            </div>
-          }
-        >
-          <TacticalCanvas
-            key={reloadNonce}
-            layers={layers}
-            activeLayerId={activeLayerId}
-            selectedFeatureRef={selectedFeatureRef}
-            focusRequest={focusRequest}
-            initialViewport={initialViewport}
-            onActiveLayerChange={onSetActiveLayer}
-            onSelectedFeatureChange={onSelectedFeatureChange}
-            onViewportSnapshotChange={setViewportSnapshot}
-            onMapHealthChange={handleMapHealthChange}
-            onFocusRequestHandled={onFocusRequestHandled}
-            onReloadRequest={handleReloadPane}
-          />
-        </MapPaneErrorBoundary>
-
-        <LegacyTacticalCanvas
+      <div className="grid gap-4">
+        <GeointSurface
           layers={layers}
           activeLayerId={activeLayerId}
           selectedFeatureRef={selectedFeatureRef}
+          focusRequest={focusRequest}
           onActiveLayerChange={onSetActiveLayer}
           onSelectedFeatureChange={onSelectedFeatureChange}
+          onViewportChange={setViewportSnapshot}
+          onFocusRequestHandled={onFocusRequestHandled}
         />
       </div>
 

@@ -1,11 +1,11 @@
 import { useDeferredValue, useMemo } from 'react';
-import type { GeoJsonFeature, LayerDefinition, MapViewportState } from '../types';
+import type { GeoJsonFeature, GeointViewportState, LayerDefinition } from '../types';
 import { computeFeatureCollectionBounds, getGeometryCounts, stringifyGeoJson } from '../utils/geojson';
 
 interface Props {
   activeLayer: LayerDefinition | null;
   selectedFeature: GeoJsonFeature | null;
-  viewport?: MapViewportState | null;
+  viewport?: GeointViewportState | null;
 }
 
 const EMPTY_JSON_MESSAGE = '<span class="text-[#4d585d]">No GeoJSON payload selected.</span>';
@@ -72,8 +72,7 @@ export function GeoJSONPanel({ activeLayer, selectedFeature, viewport }: Props) 
             <div className="mt-3 leading-[1.7] opacity-80">
               CENTER: {viewport.center[1].toFixed(4)}, {viewport.center[0].toFixed(4)}<br />
               ZOOM: {viewport.zoom.toFixed(2)}<br />
-              PITCH: {viewport.pitch.toFixed(0)}°<br />
-              BEARING: {viewport.bearing.toFixed(0)}°
+              BBOX: [{viewport.bbox.map((value) => value.toFixed(4)).join(', ')}]
             </div>
           ) : (
             <div className="mt-3 leading-[1.7] opacity-65">Viewport telemetry idle.</div>
