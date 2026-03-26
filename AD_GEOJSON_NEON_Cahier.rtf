@@ -1,0 +1,788 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2868
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 .AppleSystemUIFontMonospaced-Regular;}
+{\colortbl;\red255\green255\blue255;\red249\green248\blue242;\red36\green36\blue35;}
+{\*\expandedcolortbl;;\cssrgb\c98039\c97647\c96078;\cssrgb\c18824\c18824\c18039;}
+\margl1440\margr1440\vieww23100\viewh18660\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Following thisGEOJSON logic [https://datatracker.ietf.org/doc/html/rfc7946](https://datatracker.ietf.org/doc/html/rfc7946) \\- [https://palantir.medium.com/frontend-engineering-at-palantir-drawing-circles-on-maps-237f8b455443](https://palantir.medium.com/frontend-engineering-at-palantir-drawing-circles-on-maps-237f8b455443)  \
+and this framework into a \'93template\'94 webap design system branding type of framework : \\---  \
+project:  \
+  title: "Art Director Style Guide: THE\\_TACTICAL\\_DOSSIER"  \
+  version: "1.0-Final"  \
+  visual\\_archetype: "The Field Operative's Archive / Bound Intelligence"\
+\
+art\\_direction\\_principles:  \
+  ethos: "Raw Substrate, Hyper-Visible Data. The interface simulates a physical, heavily-handled intelligence dossier. The base is utilitarian and drab; the data layers are explosive and precise."  \
+  Rule\\_No\\_1: "Physical Constraints." UI elements must behave like physical objects bound together. Use the metaphor of heavy cardstock, index tabs, and tension bands to organize content.   \
+  Rule\\_No\\_2: "The Utilitarian Canvas." Backgrounds and primary containers are not pristine white or digital dark mode; they are raw materials\'97kraft paper, cardboard brown, industrial grey, or muted terrain maps.  \
+  Rule\\_No\\_3: "Tactical Illumination." Critical data, active states, and tracking markers must cut through the muted background with the intensity of a magnesium flare. Use pure, high-saturation neons.\
+\
+color\\_palette:  \
+  substrate\\_base:  \
+    description: "The raw physical materials."  \
+    colors:  \
+      kraft\\_brown: "\\#A6927E" \\# Base cardboard  \
+      terrain\\_grey: "\\#5D685C" \\# Muted map topography  \
+      archival\\_white: "\\#F0F0F0" \\# Bleached paper  \
+    \
+  tactical\\_markers:  \
+    description: "High-visibility data points and UI bindings."  \
+    colors:  \
+      tension\\_blue: "\\#0055D4" \\# The physical elastic band / active tabs  \
+      flare\\_orange: "\\#FF6600" \\# Urgent alerts and energy bursts  \
+      marker\\_pink: "\\#FF007F" \\# Scatter-plot data nodes  \
+      acid\\_yellow: "\\#E5FF00" \\# Accent labels and secondary data\
+\
+  industrial\\_ink:  \
+    hex: "\\#151515"  \
+    role: "Stark, unaliased black for all typography and structural borders."\
+\
+typography:  \
+  duality: "The Shipping Label & The Coordinate."  \
+  primary\\_display:  \
+    family: "Utilitarian Sans-Serif (e.g., Helvetica, Univers, or a rigid Grotesque)."  \
+    style: "Massive scale, highly legible, tightly cropped inside bounding boxes. Use parenthesis for section numbers, mimicking filing systems (e.g., '(1)', '(2)')."  \
+    \
+  secondary\\_data:  \
+    family: "Monospaced or System Sans."  \
+    style: "Small, densely packed. Used for metadata, coordinates, and contact info, aligned strictly to the edges of the 'cards'."\
+\
+visual\\_treatment:  \
+  components:  \
+    the\\_tab: "Navigation must take the form of physical, color-coded file tabs extending from the edges of the primary content blocks."  \
+    the\\_band: "Use stark vertical or horizontal lines (like the blue elastic band) to visually anchor or bisect complex layouts, creating tension."  \
+    \
+  data\\_visualization:  \
+    style: "Scatter Plot / Heatmap."  \
+    execution: "Data should be overlaid on the utilitarian background as dense clusters of brightly colored, solid geometric dots (pink, yellow, black) without strokes or shadows."\
+\
+composition\\_and\\_layout:  \
+  structure: "The Bound Stack."  \
+  logic: "Layouts should not feel like infinite digital scrolls. They should feel like a stack of differently sized papers and cardboards thrown on a desk. Allow cards to overlap, revealing tabs and edges of the content beneath."  \
+  alignment: "Strictly mechanical. Even when cards appear 'stacked', their internal text aligns to a rigid, invisible grid."\
+\
+ux\\_application:  \
+  interaction\\_model: "Sorting the Dossier."  \
+  default\\_state: "A cluttered but categorized view of overlapping file cards."  \
+  hover\\_state: "Hovering over a tab or a card brings it forward in the Z-index, visually 'pulling' it from the stack. Hovering over a data dot (like the map) triggers a high-contrast 'flare' tool-tip."  \
+\\---\
+\
+\\<\\!DOCTYPE html\\>  \
+\\<html lang="en"\\>  \
+\\<head\\>  \
+\\<meta charset="UTF-8"\\>  \
+\\<meta name="viewport" content="width=device-width, initial-scale=1.0"\\>  \
+\\<title\\>The Tactical Dossier\\</title\\>  \
+\\<style\\>  \
+  /\\* Base Reset & Environment \\*/  \
+  \\* \{  \
+    box-sizing: border-box;  \
+    margin: 0;  \
+    padding: 0;  \
+  \}\
+\
+  body \{  \
+    background-color: \\#111; /\\* Absolute Void \\*/  \
+    color: \\#151515; /\\* Industrial Ink \\*/  \
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;  \
+    display: flex;  \
+    justify-content: center;  \
+    align-items: center;  \
+    min-height: 100vh;  \
+    padding: 2rem;  \
+  \}\
+\
+  /\\* The Bound Stack Container \\*/  \
+  .dossier-stack \{  \
+    position: relative;  \
+    width: 460px;  \
+    height: 580px;  \
+    /\\* Adding a slight rotation to make it feel thrown on a desk \\*/  \
+    transform: rotate(-1deg);   \
+  \}\
+\
+  /\\* Shared Card Styles \\*/  \
+  .card \{  \
+    position: absolute;  \
+    box-shadow: 2px 4px 12px rgba(0,0,0,0.5); /\\* Physical shadow \\*/  \
+    display: flex;  \
+    flex-direction: column;  \
+    padding: 1rem;  \
+    overflow: hidden;  \
+  \}\
+\
+  .meta \{  \
+    font-size: 0.65rem;  \
+    display: flex;  \
+    justify-content: space-between;  \
+    margin-bottom: 1rem;  \
+    font-weight: 500;  \
+  \}\
+\
+  .giant-number \{  \
+    font-size: 10rem;  \
+    line-height: 0.8;  \
+    text-align: center;  \
+    font-weight: 400;  \
+    letter-spacing: \\-5px;  \
+  \}\
+\
+  /\\* Card 1: Archival White \\*/  \
+  .card-1 \{  \
+    top: 0;  \
+    left: 0;  \
+    width: 55%;  \
+    height: 35%;  \
+    background-color: \\#F0F0F0;  \
+    z-index: 1;  \
+  \}\
+\
+  /\\* Card 2: Terrain Grey \\*/  \
+  .card-2 \{  \
+    top: 0;  \
+    right: 40px; /\\* Leave room for tabs \\*/  \
+    width: 50%;  \
+    height: 60%;  \
+    background-color: \\#8a8d8c;  \
+    z-index: 2;  \
+  \}\
+\
+  /\\* Card 3: Kraft Brown \\*/  \
+  .card-3 \{  \
+    top: 30%;  \
+    left: \\-10px; /\\* Slight chaotic offset \\*/  \
+    width: 55%;  \
+    height: 70%;  \
+    background-color: \\#A6927E;  \
+    z-index: 3;  \
+  \}\
+\
+  .card-3 .sub-text \{  \
+    font-size: 1.5rem;  \
+    font-weight: 500;  \
+    line-height: 1.1;  \
+    margin-top: \\-10px;  \
+  \}\
+\
+  .card-3 .sub-numbers \{  \
+    font-size: 4rem;  \
+    font-weight: 500;  \
+    line-height: 1;  \
+    margin-top: 10px;  \
+  \}\
+\
+  /\\* Card 4: Dark Leather/Brown \\*/  \
+  .card-4 \{  \
+    bottom: 0;  \
+    right: 40px;  \
+    width: 45%;  \
+    height: 45%;  \
+    background-color: \\#7b5842;  \
+    z-index: 4;  \
+  \}\
+\
+  /\\* Tension Band (Blue Elastic) \\*/  \
+  .tension-band \{  \
+    position: absolute;  \
+    top: \\-20px;  \
+    bottom: \\-20px;  \
+    left: 55%; /\\* Anchored slightly off-center \\*/  \
+    width: 24px;  \
+    background-color: \\#0055D4; /\\* Tension Blue \\*/  \
+    z-index: 5;  \
+    box-shadow: 2px 0px 8px rgba(0,0,0,0.6);  \
+    /\\* Ribbed texture for the elastic band \\*/  \
+    background-image: repeating-linear-gradient(  \
+      transparent,  \
+      transparent 2px,  \
+      rgba(0,0,0,0.1) 2px,  \
+      rgba(0,0,0,0.1) 4px  \
+    );  \
+  \}\
+\
+  /\\* V12 Yellow Neon Sticker \\*/  \
+  .neon-sticker \{  \
+    position: absolute;  \
+    bottom: 12%;  \
+    left: 35%;  \
+    width: 200px;  \
+    height: 90px;  \
+    background-color: \\#E5FF00; /\\* Acid Yellow \\*/  \
+    z-index: 6;  \
+    display: flex;  \
+    justify-content: center;  \
+    align-items: center;  \
+    font-size: 4rem;  \
+    font-weight: 400;  \
+    letter-spacing: \\-2px;  \
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.4);  \
+  \}\
+\
+  .neon-sticker span \{  \
+    font-size: 1rem;  \
+    vertical-align: super;  \
+  \}\
+\
+  /\\* Blue Index Tabs \\*/  \
+  .tab-container \{  \
+    position: absolute;  \
+    top: 10%;  \
+    right: \\-40px;  \
+    display: flex;  \
+    flex-direction: column;  \
+    gap: 4px;  \
+    z-index: 1; /\\* Sits behind Card 2 \\*/  \
+  \}\
+\
+  .tab \{  \
+    background-color: \\#29A5FF; /\\* Tab Blue \\*/  \
+    color: \\#111;  \
+    padding: 0.5rem 0.2rem;  \
+    writing-mode: vertical-rl;  \
+    text-orientation: mixed;  \
+    border-radius: 0 8px 8px 0;  \
+    font-size: 0.75rem;  \
+    font-weight: 600;  \
+    height: 90px;  \
+    display: flex;  \
+    align-items: center;  \
+    cursor: pointer;  \
+    transition: transform 0.2s ease, background-color 0.2s ease;  \
+  \}\
+\
+  .tab:hover \{  \
+    transform: translateX(5px);  \
+    background-color: \\#0055D4;  \
+  \}  \
+\\</style\\>  \
+\\</head\\>  \
+\\<body\\>\
+\
+\\<div class="dossier-stack"\\>  \
+    \
+  \\<div class="card card-1"\\>  \
+    \\<div class="meta"\\>  \
+      \\<span\\>hola@v12spa.com\\</span\\>  \
+    \\</div\\>  \
+    \\<div class="giant-number"\\>(1)\\</div\\>  \
+  \\</div\\>\
+\
+  \\<div class="card card-2"\\>  \
+    \\<div class="meta"\\>  \
+      \\<span\\>hola@v12spa.com\\</span\\>  \
+      \\<span\\>+34 674 256 097\\</span\\>  \
+    \\</div\\>  \
+    \\<div class="giant-number"\\>(2)\\</div\\>  \
+      \
+    \\<div class="tab-container"\\>  \
+      \\<div class="tab"\\>(1.1) L-Pr.\\</div\\>  \
+      \\<div class="tab"\\>(1.2) L-Tap.\\</div\\>  \
+      \\<div class="tab"\\>(1.3) T-Es.\\</div\\>  \
+      \\<div class="tab"\\>(1.4) M+B.\\</div\\>  \
+      \\<div class="tab"\\>(1.5) O3.\\</div\\>  \
+    \\</div\\>  \
+  \\</div\\>\
+\
+  \\<div class="card card-3"\\>  \
+    \\<div class="meta"\\>  \
+      \\<span\\>hola@v12spa.com\\</span\\>  \
+    \\</div\\>  \
+    \\<div class="giant-number"\\>(3)\\</div\\>  \
+    \\<div class="sub-text"\\>Protecci\'f3n\\<br\\>Carrocer\'eda\\</div\\>  \
+    \\<div class="sub-numbers"\\>3.1.\\<br\\>3.2.\\</div\\>  \
+  \\</div\\>\
+\
+  \\<div class="card card-4"\\>  \
+    \\<div class="meta"\\>  \
+      \\<span\\>+34 674 256 097\\</span\\>  \
+    \\</div\\>  \
+    \\<div class="giant-number"\\>(4)\\</div\\>  \
+  \\</div\\>\
+\
+  \\<div class="tension-band"\\>\\</div\\>\
+\
+  \\<div class="neon-sticker"\\>  \
+    V12\\<span\\>\'99\\</span\\>  \
+  \\</div\\>\
+\
+\\</div\\>\
+\
+\\</body\\>  \
+\\</html\\>\
+\
+\\---  \
+module: "Data Visualization: NEON\\_SCATTER\\_PLOT"  \
+version: "1.1-Expansion"  \
+parent\\_guide: "THE\\_TACTICAL\\_DOSSIER"\
+\
+data\\_mapping\\_rules:  \
+  ethos: "Density is Data. Do not use opacity to show heatmaps. Allow solid dots to overlap and occlude each other; the visual mass of a color indicates concentration."  \
+    \
+  node\\_anatomy:  \
+    shape: "Perfect circle (border-radius: 50%)."  \
+    scale: "Small to Micro (3px to 6px diameter). Scale remains fixed regardless of zoom level."  \
+    effects: "ZERO effects. No drop shadows, no strokes, no gradients. Pure fill only."\
+\
+  category\\_color\\_mapping:  \
+    \\# Colors derived from the tactical markers in the Amazonia reference.  \
+    primary\\_infrastructure:   \
+      color: "\\#151515" \\# Industrial Ink (Black)  \
+      usage: "Base points, archaeological sites, foundational data."  \
+    secondary\\_pathways:  \
+      color: "\\#FF6600" \\# Flare Orange  \
+      usage: "Geoglyphs, ditches, old roads, connections."  \
+    organic\\_density:  \
+      color: "\\#FF007F" \\# Marker Pink  \
+      usage: "Brazil-nut trees, organic spread, high-volume localized data."  \
+    environmental\\_zones:  \
+      color: "\\#E5FF00" \\# Acid Yellow  \
+      usage: "Dark earth, overarching zones, broad categorical boundaries."\
+\
+  rendering\\_logic:  \
+    background\\_contrast: "The scatter plot must sit directly on a muted substrate (Terrain Grey \\#5D685C or Kraft Brown \\#A6927E). Do not place these neon dots on pure white or pure black."  \
+    z\\_index\\_hierarchy: "Render sequence matters. Render black foundation points first (bottom), followed by orange, then pink, and finally yellow (top) to ensure critical highlights aren't buried."  \
+\\---  \
+\\<\\!DOCTYPE html\\>  \
+\\<html lang="en"\\>  \
+\\<head\\>  \
+\\<meta charset="UTF-8"\\>  \
+\\<meta name="viewport" content="width=device-width, initial-scale=1.0"\\>  \
+\\<title\\>Tactical Scatter Plot\\</title\\>  \
+\\<style\\>  \
+  /\\* Base Environment \\*/  \
+  \\* \{ box-sizing: border-box; margin: 0; padding: 0; \}  \
+    \
+  body \{  \
+    background-color: \\#111;  \
+    display: flex;  \
+    justify-content: center;  \
+    align-items: center;  \
+    height: 100vh;  \
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;  \
+  \}\
+\
+  /\\* The Map / Substrate Canvas \\*/  \
+  .tactical-canvas \{  \
+    position: relative;  \
+    width: 600px;  \
+    height: 450px;  \
+    background-color: \\#5D685C; /\\* Terrain Grey \\*/  \
+    border: 2px solid \\#151515; /\\* Industrial Ink Border \\*/  \
+    overflow: hidden;  \
+    box-shadow: 4px 6px 15px rgba(0,0,0,0.6);  \
+  \}\
+\
+  /\\* Base Node Styling (No shadows, pure geometry) \\*/  \
+  .data-node \{  \
+    position: absolute;  \
+    border-radius: 50%;  \
+    transform: translate(-50%, \\-50%); /\\* Center on coordinate \\*/  \
+  \}\
+\
+  /\\* Dynamic Size Classes \\*/  \
+  .size-sm \{ width: 3px; height: 3px; \}  \
+  .size-md \{ width: 5px; height: 5px; \}  \
+  .size-lg \{ width: 7px; height: 7px; \}\
+\
+  /\\* Category Color Mapping \\*/  \
+  .cat-infrastructure \{ background-color: \\#151515; z-index: 10; \} /\\* Black \\*/  \
+  .cat-pathway        \{ background-color: \\#FF6600; z-index: 20; \} /\\* Orange \\*/  \
+  .cat-organic        \{ background-color: \\#FF007F; z-index: 30; \} /\\* Pink \\*/  \
+  .cat-zone           \{ background-color: \\#E5FF00; z-index: 40; \} /\\* Yellow \\*/\
+\
+  /\\* Optional: UI Overlay to frame the data \\*/  \
+  .canvas-label \{  \
+    position: absolute;  \
+    bottom: 15px;  \
+    left: 15px;  \
+    color: \\#151515;  \
+    font-size: 0.75rem;  \
+    font-weight: 700;  \
+    letter-spacing: 1px;  \
+    text-transform: uppercase;  \
+    z-index: 100;  \
+  \}  \
+\\</style\\>  \
+\\</head\\>  \
+\\<body\\>\
+\
+\\<div class="tactical-canvas" id="map-container"\\>  \
+  \\<div class="canvas-label"\\>Fig. 1 \'97 Tactical Scatter Plot\\</div\\>  \
+  \\</div\\>\
+\
+\\<script\\>  \
+  // 1\\. Simulated JSON Payload  \
+  // Coordinates are represented as percentages (0-100) for responsive mapping.  \
+  const intelligenceData \\= \\[  \
+    \{ id: 1, type: "infrastructure", x: 15, y: 20 \},  \
+    \{ id: 2, type: "infrastructure", x: 16, y: 22 \},  \
+    \{ id: 3, type: "infrastructure", x: 80, y: 15 \},  \
+    \{ id: 4, type: "pathway", x: 75, y: 40 \},  \
+    \{ id: 5, type: "pathway", x: 77, y: 42 \},  \
+    \{ id: 6, type: "organic", x: 40, y: 70 \},  \
+    \{ id: 7, type: "organic", x: 42, y: 71 \},  \
+    \{ id: 8, type: "organic", x: 41, y: 68 \},  \
+    \{ id: 9, type: "organic", x: 43, y: 75 \},  \
+    \{ id: 10, type: "zone", x: 60, y: 55 \},  \
+    \{ id: 11, type: "zone", x: 61, y: 56 \},  \
+    \{ id: 12, type: "zone", x: 63, y: 54 \}  \
+  \\];\
+\
+  // Procedurally generate more data points to simulate the dense cluster effect  \
+  const generateCluster \\= (baseType, baseX, baseY, count, spread) \\=\\> \{  \
+    let cluster \\= \\[\\];  \
+    for(let i \\= 0; i \\< count; i++) \{  \
+      cluster.push(\{  \
+        id: Math.random(),  \
+        type: baseType,  \
+        x: baseX \\+ (Math.random() \\* spread \\- (spread / 2)),  \
+        y: baseY \\+ (Math.random() \\* spread \\- (spread / 2))  \
+      \});  \
+    \}  \
+    return cluster;  \
+  \};\
+\
+  // Build a dense payload  \
+  const fullPayload \\= \\[  \
+    ...intelligenceData,  \
+    ...generateCluster('infrastructure', 20, 20, 50, 15),  \
+    ...generateCluster('pathway', 75, 80, 40, 10),  \
+    ...generateCluster('organic', 45, 60, 150, 25), // Dense pink cluster  \
+    ...generateCluster('zone', 60, 50, 80, 20\\)      // Yellow zone  \
+  \\];\
+\
+  // 2\\. The Rendering Engine  \
+  const container \\= document.getElementById('map-container');\
+\
+  const renderScatterPlot \\= (data) \\=\\> \{  \
+    // Document fragment for performance when appending hundreds of nodes  \
+    const fragment \\= document.createDocumentFragment();\
+\
+    data.forEach(point \\=\\> \{  \
+      const node \\= document.createElement('div');  \
+        \
+      // Assign core class  \
+      node.classList.add('data-node');  \
+        \
+      // Map JSON 'type' to CSS Category Class  \
+      node.classList.add(\\`cat-$\{point.type\}\\`);  \
+        \
+      // Determine size (Defaulting to md, but could be dynamic based on JSON weight)  \
+      node.classList.add('size-md');\
+\
+      // Map JSON coordinates to absolute CSS positioning  \
+      node.style.left \\= \\`$\{point.x\}%\\`;  \
+      node.style.top \\= \\`$\{point.y\}%\\`;\
+\
+      fragment.appendChild(node);  \
+    \});\
+\
+    container.appendChild(fragment);  \
+  \};\
+\
+  // Execute  \
+  renderScatterPlot(fullPayload);\
+\
+\\</script\\>  \
+\\</body\\>  \
+\\</html\\>  \
+\\<\\!DOCTYPE html\\>  \
+\\<html lang="en"\\>  \
+\\<head\\>  \
+\\<meta charset="UTF-8"\\>  \
+\\<meta name="viewport" content="width=device-width, initial-scale=1.0"\\>  \
+\\<title\\>Tactical Legend & Scatter Plot\\</title\\>  \
+\\<style\\>  \
+  /\\* Base Environment \\*/  \
+  \\* \{ box-sizing: border-box; margin: 0; padding: 0; \}  \
+    \
+  body \{  \
+    background-color: \\#111; /\\* Absolute Void \\*/  \
+    display: flex;  \
+    justify-content: center;  \
+    align-items: center;  \
+    min-height: 100vh;  \
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;  \
+  \}\
+\
+  /\\* The Bound Wrapper \\*/  \
+  .dossier-wrapper \{  \
+    position: relative;  \
+    display: flex;  \
+    /\\* Slight rotation for the physical desk feel \\*/  \
+    transform: rotate(-0.5deg);  \
+  \}\
+\
+  /\\* The Map / Substrate Canvas \\*/  \
+  .tactical-canvas \{  \
+    position: relative;  \
+    width: 600px;  \
+    height: 450px;  \
+    background-color: \\#5D685C; /\\* Terrain Grey \\*/  \
+    border: 2px solid \\#151515; /\\* Industrial Ink Border \\*/  \
+    overflow: hidden;  \
+    box-shadow: 4px 6px 15px rgba(0,0,0,0.6);  \
+    z-index: 10; /\\* Sits above the tabs \\*/  \
+  \}\
+\
+  /\\* Base Node Styling \\*/  \
+  .data-node \{  \
+    position: absolute;  \
+    border-radius: 50%;  \
+    /\\* Hardware accelerated scaling for the toggle animation \\*/  \
+    transform: translate(-50%, \\-50%) scale(1);   \
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);  \
+  \}\
+\
+  /\\* Hidden State for Filtered Nodes \\*/  \
+  .data-node.is-hidden \{  \
+    transform: translate(-50%, \\-50%) scale(0);  \
+  \}\
+\
+  /\\* Dynamic Size Classes \\*/  \
+  .size-md \{ width: 5px; height: 5px; \}\
+\
+  /\\* Category Color Mapping \\*/  \
+  .cat-infrastructure \{ background-color: \\#151515; z-index: 10; \} /\\* Black \\*/  \
+  .cat-pathway        \{ background-color: \\#FF6600; z-index: 20; \} /\\* Orange \\*/  \
+  .cat-organic        \{ background-color: \\#FF007F; z-index: 30; \} /\\* Pink \\*/  \
+  .cat-zone           \{ background-color: \\#E5FF00; z-index: 40; \} /\\* Yellow \\*/\
+\
+  /\\* UI Overlay \\*/  \
+  .canvas-label \{  \
+    position: absolute;  \
+    bottom: 15px;  \
+    left: 15px;  \
+    color: \\#151515;  \
+    font-size: 0.75rem;  \
+    font-weight: 700;  \
+    letter-spacing: 1px;  \
+    text-transform: uppercase;  \
+    z-index: 100;  \
+    background: rgba(93, 104, 92, 0.8);  \
+    padding: 2px 6px;  \
+  \}\
+\
+  /\\* \\--- The Tactical Legend (Tabs) \\--- \\*/  \
+  .tab-container \{  \
+    position: absolute;  \
+    top: 20px;  \
+    right: \\-45px; /\\* Protrude from under the canvas \\*/  \
+    display: flex;  \
+    flex-direction: column;  \
+    gap: 6px;  \
+    z-index: 5; /\\* Sit beneath the canvas \\*/  \
+  \}\
+\
+  .legend-tab \{  \
+    color: \\#151515;  \
+    padding: 0.5rem 0.2rem;  \
+    writing-mode: vertical-rl;  \
+    text-orientation: mixed;  \
+    border-radius: 0 6px 6px 0;  \
+    font-size: 0.75rem;  \
+    font-weight: 700;  \
+    letter-spacing: 0.5px;  \
+    height: 90px;  \
+    display: flex;  \
+    align-items: center;  \
+    cursor: pointer;  \
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.5);  \
+    /\\* Physical slide transition \\*/  \
+    transform: translateX(0px);  \
+    transition: transform 0.2s ease, filter 0.2s ease;  \
+  \}\
+\
+  /\\* Specific Tab Colors matching the Data \\*/  \
+  .tab-infrastructure \{ background-color: \\#151515; color: \\#F0F0F0; border: 1px solid \\#333; \}  \
+  .tab-pathway        \{ background-color: \\#FF6600; \}  \
+  .tab-organic        \{ background-color: \\#FF007F; \}  \
+  .tab-zone           \{ background-color: \\#E5FF00; \}\
+\
+  /\\* Hover and Active States \\*/  \
+  .legend-tab:hover \{  \
+    transform: translateX(5px); /\\* Pull out slightly on hover \\*/  \
+  \}\
+\
+  /\\* When a layer is toggled OFF \\*/  \
+  .legend-tab.is-disabled \{  \
+    transform: translateX(-25px); /\\* Push the tab back into the folder \\*/  \
+    filter: grayscale(0.8) opacity(0.5); /\\* Dim it physically \\*/  \
+  \}  \
+\\</style\\>  \
+\\</head\\>  \
+\\<body\\>\
+\
+\\<div class="dossier-wrapper"\\>  \
+  \\<div class="tactical-canvas" id="map-container"\\>  \
+    \\<div class="canvas-label"\\>Fig. 1 \'97 Tactical Legend & Filter\\</div\\>  \
+    \\</div\\>\
+\
+  \\<div class="tab-container" id="legend-tabs"\\>  \
+    \\<div class="legend-tab tab-infrastructure" data-target="infrastructure"\\>(1) BASE\\</div\\>  \
+    \\<div class="legend-tab tab-pathway" data-target="pathway"\\>(2) PATH\\</div\\>  \
+    \\<div class="legend-tab tab-organic" data-target="organic"\\>(3) ORGN\\</div\\>  \
+    \\<div class="legend-tab tab-zone" data-target="zone"\\>(4) ZONE\\</div\\>  \
+  \\</div\\>  \
+\\</div\\>\
+\
+\\<script\\>  \
+  // 1\\. Generate Simulated Payload  \
+  const generateCluster \\= (baseType, baseX, baseY, count, spread) \\=\\> \{  \
+    let cluster \\= \\[\\];  \
+    for(let i \\= 0; i \\< count; i++) \{  \
+      cluster.push(\{  \
+        type: baseType,  \
+        x: baseX \\+ (Math.random() \\* spread \\- (spread / 2)),  \
+        y: baseY \\+ (Math.random() \\* spread \\- (spread / 2))  \
+      \});  \
+    \}  \
+    return cluster;  \
+  \};\
+\
+  const fullPayload \\= \\[  \
+    ...generateCluster('infrastructure', 20, 20, 50, 15),  \
+    ...generateCluster('infrastructure', 80, 80, 30, 10),  \
+    ...generateCluster('pathway', 50, 50, 80, 40),  \
+    ...generateCluster('organic', 40, 70, 150, 25), // Dense pink   \
+    ...generateCluster('zone', 70, 30, 90, 20\\)      // Yellow zone  \
+  \\];\
+\
+  // 2\\. Render Engine  \
+  const container \\= document.getElementById('map-container');  \
+  const renderedNodes \\= \\[\\]; // Store references for fast filtering\
+\
+  const renderScatterPlot \\= (data) \\=\\> \{  \
+    const fragment \\= document.createDocumentFragment();\
+\
+    data.forEach(point \\=\\> \{  \
+      const node \\= document.createElement('div');  \
+      node.classList.add('data-node', \\`cat-$\{point.type\}\\`, 'size-md');  \
+      // Store the category directly on the DOM element dataset for easy access  \
+      node.dataset.category \\= point.type;   \
+        \
+      node.style.left \\= \\`$\{point.x\}%\\`;  \
+      node.style.top \\= \\`$\{point.y\}%\\`;\
+\
+      fragment.appendChild(node);  \
+      renderedNodes.push(node); // Keep track in memory  \
+    \});\
+\
+    container.appendChild(fragment);  \
+  \};\
+\
+  renderScatterPlot(fullPayload);\
+\
+  // 3\\. Tactical Legend Filter Logic  \
+  const tabs \\= document.querySelectorAll('.legend-tab');  \
+    \
+  // State object tracking which layers are currently active  \
+  const activeFilters \\= \{  \
+    infrastructure: true,  \
+    pathway: true,  \
+    organic: true,  \
+    zone: true  \
+  \};\
+\
+  tabs.forEach(tab \\=\\> \{  \
+    tab.addEventListener('click', () \\=\\> \{  \
+      const targetCategory \\= tab.dataset.target;  \
+        \
+      // Toggle state  \
+      activeFilters\\[targetCategory\\] \\= \\!activeFilters\\[targetCategory\\];  \
+        \
+      // Visually push/pull the physical tab  \
+      if(activeFilters\\[targetCategory\\]) \{  \
+        tab.classList.remove('is-disabled');  \
+      \} else \{  \
+        tab.classList.add('is-disabled');  \
+      \}\
+\
+      // Update the Map Nodes  \
+      renderedNodes.forEach(node \\=\\> \{  \
+        if (node.dataset.category \\=== targetCategory) \{  \
+          if (activeFilters\\[targetCategory\\]) \{  \
+            node.classList.remove('is-hidden');  \
+          \} else \{  \
+            node.classList.add('is-hidden');  \
+          \}  \
+        \}  \
+      \});  \
+    \});  \
+  \});\
+\
+\\</script\\>  \
+\\</body\\>  \
+\\</html\\>  \
+\\<\\!DOCTYPE html\\>  \
+\\<html lang="en"\\>  \
+\\<head\\>  \
+\\<meta charset="UTF-8"\\>  \
+\\<meta name="viewport" content="width=device-width, initial-scale=1.0"\\>  \
+\\<title\\>Responsive Stencil Typography\\</title\\>  \
+\\<style\\>  \
+  /\\* Base Environment for Demo \\*/  \
+  \\* \{ box-sizing: border-box; margin: 0; padding: 0; \}  \
+  body \{  \
+    background-color: \\#111;  \
+    display: flex;  \
+    justify-content: center;  \
+    align-items: center;  \
+    height: 100vh;  \
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;  \
+  \}\
+\
+  /\\* The Physical Card Container \\*/  \
+  .card-report \{  \
+    width: 50vw;       /\\* Responsive width to test the scaling \\*/  \
+    min-width: 300px;  \
+    max-width: 600px;  \
+    height: 60vh;  \
+    background-color: \\#A6927E; /\\* Kraft Brown \\*/  \
+    padding: 2rem;  \
+    display: flex;  \
+    flex-direction: column;  \
+    box-shadow: 4px 8px 20px rgba(0,0,0,0.6);  \
+    resize: both;      /\\* Allows you to drag the corner and test the scaling\\! \\*/  \
+    overflow: hidden;  \
+  \}\
+\
+  .report-meta \{  \
+    font-size: 0.75rem;  \
+    display: flex;  \
+    justify-content: space-between;  \
+    font-weight: 700;  \
+    text-transform: uppercase;  \
+    border-bottom: 2px solid \\#151515;  \
+    padding-bottom: 0.5rem;  \
+  \}\
+\
+  /\\* \\--- THE RESPONSIVE SVG TYPOGRAPHY \\--- \\*/  \
+  .fluid-typography-container \{  \
+    width: 100%;  \
+    /\\* Flex-grow allows it to fill available space without pushing other elements out \\*/  \
+    flex-grow: 1;   \
+    display: flex;  \
+    align-items: center;  \
+    justify-content: center;  \
+    margin: 1rem 0;  \
+  \}\
+\
+  .stencil-svg \{  \
+    width: 100%;  \
+    height: 100%;  \
+    max-height: 250px; /\\* Cap the max height so it doesn't get absurdly large \\*/  \
+    overflow: visible;  \
+  \}\
+\
+  .stencil-text \{  \
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;  \
+    font-weight: 400;  \
+    font-size: 100px; /\\* This size is relative to the SVG viewBox, NOT the screen \\*/  \
+    letter-spacing: \\-6px; /\\* Aggressive tight tracking \\*/  \
+    fill}

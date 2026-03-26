@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE TACTICAL DOSSIER — GeoINT Template</title>
+<style>
+  /* ═══════════════════════════════════════════
+     BASE RESET & ENVIRONMENT
+     ═══════════════════════════════════════════ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* Substrate Base */
+    --kraft-brown: #A6927E;
+    --terrain-grey: #5D685C;
+    --archival-white: #F0F0F0;
+    --void: #111;
+    --leather: #7b5842;
+    --grey-mid: #8a8d8c;
+
+    /* Tactical Markers */
+    --tension-blue: #0055D4;
+    --tab-blue: #29A5FF;
+    --flare-orange: #FF6600;
+    --marker-pink: #FF007F;
+    --acid-yellow: #E5FF00;
+
+    /* Industrial Ink */
+    --ink: #151515;
+  }
+
+  @font-face {
+    font-family: 'DossierMono';
+    src: local('SF Mono'), local('Menlo'), local('Consolas'), local('monospace');
+  }
+
+  body {
+    background-color: var(--void);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ═══════════════════════════════════════════
+     DOSSIER SHELL — THE DESK
+     ═══════════════════════════════════════════ */
+  .desk {
+    width: 100%;
+    min-height: 100vh;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Desk texture — faint grid like a cutting mat */
+  .desk::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ═══════════════════════════════════════════
+     HEADER BAND — Classification Strip
+     ═══════════════════════════════════════════ */
+  .classification-strip {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--ink);
+    border-bottom: 3px solid var(--tension-blue);
+    position: relative;
+    z-index: 100;
+    margin-bottom: 1.5rem;
+  }
+
+  .classification-strip .mark {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--flare-orange);
+    font-family: 'DossierMono', monospace;
+  }
+
+  .classification-strip .timestamp {
+    font-size: 0.6rem;
+    color: var(--grey-mid);
+    font-family: 'DossierMono', monospace;
+    letter-spacing: 1px;
+  }
+
+  /* ═══════════════════════════════════════════
+     LEFT COLUMN — THE BOUND STACK
+     ═══════════════════════════════════════════ */
+  .left-col {
+    position: relative;
+    z-index: 10;
+    padding-right: 2rem;
+  }
+
+  .dossier-stack {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    height: 560px;
+    transform: rotate(-0.8deg);
+    margin: 0 auto;
+  }
+
+  /* Shared Card */
+  .card {
+    position: absolute;
+    box-shadow: 2px 4px 12px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.3s ease;
+    cursor: default;
+  }
+
+  .card:hover {
+    box-shadow: 4px 8px 24px rgba(0,0,0,0.7);
+  }
+
+  .meta {
+    font-size: 0.6rem;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    font-family: 'DossierMono', monospace;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 0.75rem;
+  }
+
+  .giant-number {
+    font-size: 8rem;
+    line-height: 0.85;
+    text-align: center;
+    font-weight: 300;
+    letter-spacing: -4px;
+  }
+
+  /* Card 1: Archival White — Summary */
+  .card-1 {
+    top: 0; left: 0;
+    width: 52%; height: 32%;
+    background-color: var(--archival-white);
+    z-index: 1;
+  }
+
+  .card-1 .card-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: auto;
+    border-top: 1px solid var(--ink);
+    padding-top: 0.5rem;
+  }
+
+  /* Card 2: Terrain Grey — GeoJSON Metadata */
+  .card-2 {
+    top: 0; right: 50px;
+    width: 48%; height: 55%;
+    background-color: var(--grey-mid);
+    z-index: 2;
+  }
+
+  .card-2 .coord-block {
+    font-family: 'DossierMono', monospace;
+    font-size: 0.6rem;
+    line-height: 1.8;
+    margin-top: auto;
+    color: var(--archival-white);
+    opacity: 0.8;
+  }
+
+  /* Card 3: Kraft Brown — Primary Content */
+  .card-3 {
+    top: 28%; left: -8px;
+    width: 54%; height: 72%;
+    background-color: var(--kraft-brown);
+    z-index: 3;
+  }
+
+  .card-3 .sub-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.15;
+    margin-top: -5px;
+    letter-spacing: -0.5px;
+  }
+
+  .card-3 .sub-numbers {
+    font-size: 3rem;
+    font-weight: 400;
+    line-height: 1.1;
+    margin-top: 8px;
+  }
+
+  .card-3 .geojson-badge {
+    margin-top: auto;
+    font-size: 0.55rem;
+    font-family: 'DossierMono', monospace;
+    background: var(--ink);
+    color: var(--acid-yellow);
+    padding: 3px 8px;
+    display: inline-block;
+    letter-spacing: 1px;
+  }
+
+  /* Card 4: Dark Leather — Status */
+  .card-4 {
+    bottom: 0; right: 50px;
+    width: 42%; height: 40%;
+    background-color: var(--leather);
+    z-index: 4;
+    color: var(--archival-white);
+  }
+
+  .card-4 .status-indicator {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .card-4 .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--acid-yellow);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  /* Tension Band */
+  .tension-band {
+    position: absolute;
+    top: -20px; bottom: -20px;
+    left: 53%;
+    width: 22px;
+    background-color: var(--tension-blue);
+    z-index: 5;
+    box-shadow: 2px 0px 8px rgba(0,0,0,0.6);
+    background-image: repeating-linear-gradient(
+      transparent, transparent 2px,
+      rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px
+    );
+  }
+
+  /* Neon Sticker */
+  .neon-sticker {
+    position: absolute;
+    bottom: 10%; left: 32%;
+    padding: 0.6rem 1.5rem;
+    background-color: var(--acid-yellow);
+    z-index: 6;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    font-size: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -1px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.4);
+    transform: rotate(1.5deg);
+  }
+
+  .neon-sticker .tm {
+    font-size: 0.6rem;
+    vertical-align: super;
+    font-weight: 700;
+  }
+
+  /* Index Tabs */
+  .tab-container {
+    position: absolute;
+    top: 8%; right: -42px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 1;
+  }
+
+  .tab {
+    background-color: var(--tab-blue);
+    color: var(--ink);
+    padding: 0.4rem 0.15rem;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+  }
+
+  .tab:hover {
+    transform: translateX(5px);
+    background-color: var(--tension-blue);
+    color: var(--archival-white);
+  }
+
+  /* ═══════════════════════════════════════════
+     RIGHT COLUMN — GEO CANVAS + SCATTER
+     ═══════════════════════════════════════════ */
+  .right-col {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* The Tactical Canvas */
+  .tactical-canvas {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-color: var(--terrain-grey);
+    border: 2px solid var(--ink);
+    overflow: hidden;
+    box-shadow: 4px 6px 15px rgba(0,0,0,0.6);
+    transform: rotate(0.3deg);
+    cursor: crosshair;
+  }
+
+  /* Topo lines on canvas */
+  .tactical-canvas::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 300px 200px at 30% 40%, rgba(255,255,255,0.04) 0%, transparent 100%),
+      radial-gradient(ellipse 200px 300px at 70% 60%, rgba(255,255,255,0.03) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Grid overlay */
+  .tactical-canvas::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 10% 10%;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Scatter nodes */
+  .data-node {
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 3;
+  }
+
+  .data-node.is-hidden {
+    transform: translate(-50%, -50%) scale(0);
+  }
+
+  /* GeoJSON circle overlay — Palantir style */
+  .geo-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px solid;
+    background: transparent;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+    animation: circle-appear 0.6s ease-out forwards;
+  }
+
+  @keyframes circle-appear {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .geo-circle.radius-orange {
+    border-color: var(--flare-orange);
+    box-shadow: 0 0 8px rgba(255, 102, 0, 0.3);
+  }
+
+  .geo-circle.radius-pink {
+    border-color: var(--marker-pink);
+    box-shadow: 0 0 8px rgba(255, 0, 127, 0.3);
+  }
+
+  .geo-circle.radius-blue {
+    border-color: var(--tension-blue);
+    box-shadow: 0 0 8px rgba(0, 85, 212, 0.3);
+  }
+
+  .geo-circle.fill-zone {
+    background: rgba(229, 255, 0, 0.06);
+    border-color: var(--acid-yellow);
+  }
+
+  /* Canvas labels */
+  .canvas-label {
+    position: absolute;
+    bottom: 10px; left: 12px;
+    color: var(--ink);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    z-index: 100;
+    background: rgba(93, 104, 92, 0.85);
+    padding: 2px 8px;
+    font-family: 'DossierMono', monospace;
+  }
+
+  .canvas-coords {
+    position: absolute;
+    top: 10px; right: 12px;
+    color: var(--acid-yellow);
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    z-index: 100;
+    font-family: 'DossierMono', monospace;
+    text-align: right;
+    line-height: 1.6;
+    text-shadow: 0 0 4px rgba(229,255,0,0.3);
+  }
+
+  /* Crosshair on hover */
+  .crosshair-h, .crosshair-v {
+    position: absolute;
+    background: rgba(229, 255, 0, 0.15);
+    pointer-events: none;
+    z-index: 50;
+    display: none;
+  }
+  .crosshair-h { height: 1px; left: 0; right: 0; }
+  .crosshair-v { width: 1px; top: 0; bottom: 0; }
+
+  /* Tooltip flare */
+  .flare-tooltip {
+    position: absolute;
+    background: var(--ink);
+    color: var(--acid-yellow);
+    font-size: 0.55rem;
+    font-family: 'DossierMono', monospace;
+    padding: 4px 8px;
+    border: 1px solid var(--acid-yellow);
+    pointer-events: none;
+    z-index: 200;
+    display: none;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 12px rgba(229, 255, 0, 0.2);
+  }
+
+  /* ═══════════════════════════════════════════
+     LEGEND PANEL — Physical tabs
+     ═══════════════════════════════════════════ */
+  .legend-panel {
+    display: flex;
+    gap: 0;
+    position: relative;
+  }
+
+  .legend-tab {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'DossierMono', monospace;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    transition: filter 0.2s ease, transform 0.2s ease;
+    border: none;
+    outline: none;
+    position: relative;
+  }
+
+  .legend-tab .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-tab.is-disabled {
+    filter: grayscale(0.8) opacity(0.35);
+    transform: translateY(3px);
+  }
+
+  .tab-infrastructure { background: var(--ink); color: var(--archival-white); }
+  .tab-infrastructure .dot { background: var(--archival-white); }
+
+  .tab-pathway { background: var(--flare-orange); color: var(--ink); }
+  .tab-pathway .dot { background: var(--ink); }
+
+  .tab-organic { background: var(--marker-pink); color: var(--ink); }
+  .tab-organic .dot { background: var(--ink); }
+
+  .tab-zone { background: var(--acid-yellow); color: var(--ink); }
+  .tab-zone .dot { background: var(--ink); }
+
+  /* ═══════════════════════════════════════════
+     GEOJSON INFO PANEL
+     ═══════════════════════════════════════════ */
+  .geojson-panel {
+    background: var(--kraft-brown);
+    padding: 1rem;
+    box-shadow: 2px 4px 12px rgba(0,0,0,0.5);
+    transform: rotate(-0.5deg);
+    position: relative;
+  }
+
+  .geojson-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .geojson-panel .panel-header h3 {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .geojson-panel .panel-header .rfc-tag {
+    font-size: 0.5rem;
+    font-family: 'DossierMono', monospace;
+    background: var(--ink);
+    color: var(--flare-orange);
+    padding: 2px 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .geojson-output {
+    font-family: 'DossierMono', monospace;
+    font-size: 0.55rem;
+    line-height: 1.5;
+    color: var(--ink);
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre;
+    background: rgba(0,0,0,0.06);
+    padding: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ink) transparent;
+  }
+
+  .geojson-output .key { color: var(--tension-blue); }
+  .geojson-output .str { color: var(--leather); }
+  .geojson-output .num { color: var(--flare-orange); }
+
+  /* ═══════════════════════════════════════════
+     STATS BAR
+     ═══════════════════════════════════════════ */
+  .stats-bar {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0;
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 10;
+  }
+
+  .stat-cell {
+    flex: 1;
+    padding: 0.8rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-cell:nth-child(1) { background: var(--ink); color: var(--archival-white); }
+  .stat-cell:nth-child(2) { background: var(--terrain-grey); color: var(--archival-white); }
+  .stat-cell:nth-child(3) { background: var(--kraft-brown); color: var(--ink); }
+  .stat-cell:nth-child(4) { background: var(--leather); color: var(--archival-white); }
+  .stat-cell:nth-child(5) { background: var(--acid-yellow); color: var(--ink); }
+
+  .stat-cell .stat-label {
+    font-size: 0.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-family: 'DossierMono', monospace;
+    opacity: 0.7;
+  }
+
+  .stat-cell .stat-value {
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  /* ═══════════════════════════════════════════
+     RESPONSIVE
+     ═══════════════════════════════════════════ */
+  @media (max-width: 1100px) {
+    .desk {
+      grid-template-columns: 1fr;
+      padding: 1rem;
+    }
+    .left-col { padding-right: 0; margin-bottom: 2rem; }
+    .dossier-stack { max-width: 420px; height: 500px; }
+    .stats-bar { flex-wrap: wrap; }
+    .stat-cell { min-width: 120px; }
+  }
+
+  /* ═══════════════════════════════════════════
+     ENTRANCE ANIMATIONS
+     ═══════════════════════════════════════════ */
+  .card, .tactical-canvas, .geojson-panel, .legend-panel, .stats-bar {
+    opacity: 0;
+    animation: drop-in 0.5s ease-out forwards;
+  }
+
+  .card-1 { animation-delay: 0.1s; }
+  .card-2 { animation-delay: 0.2s; }
+  .card-3 { animation-delay: 0.3s; }
+  .card-4 { animation-delay: 0.4s; }
+  .tension-band { animation: band-slide 0.6s 0.5s ease-out both; }
+  .neon-sticker { animation: sticker-slam 0.3s 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .tactical-canvas { animation-delay: 0.3s; }
+  .legend-panel { animation-delay: 0.5s; }
+  .geojson-panel { animation-delay: 0.6s; }
+  .stats-bar { animation-delay: 0.7s; }
+
+  @keyframes drop-in {
+    from { opacity: 0; transform: translateY(15px) rotate(0deg); }
+    to { opacity: 1; transform: translateY(0) rotate(0deg); }
+  }
+
+  @keyframes band-slide {
+    from { opacity: 0; transform: scaleY(0); }
+    to { opacity: 1; transform: scaleY(1); }
+  }
+
+  @keyframes sticker-slam {
+    from { opacity: 0; transform: rotate(1.5deg) scale(1.4); }
+    to { opacity: 1; transform: rotate(1.5deg) scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ CLASSIFICATION STRIP ═══ -->
+<div class="desk">
+  <div class="classification-strip">
+    <span class="mark">■ TACTICAL DOSSIER — GEOINT TEMPLATE v1.0</span>
+    <span class="timestamp" id="live-clock">2026-03-22T00:00:00Z</span>
+  </div>
+
+  <!-- ═══ LEFT: BOUND STACK ═══ -->
+  <div class="left-col">
+    <div class="dossier-stack">
+
+      <div class="card card-1">
+        <div class="meta">
+          <span>RFC 7946</span>
+          <span>GEOJSON</span>
+        </div>
+        <div class="giant-number">(1)</div>
+        <div class="card-title">Feature Collection — Point Geometry</div>
+      </div>
+
+      <div class="card card-2">
+        <div class="meta">
+          <span>COORD.SYS</span>
+          <span>WGS 84</span>
+        </div>
+        <div class="giant-number">(2)</div>
+        <div class="coord-block" id="coord-readout">
+          TYPE: FeatureCollection<br>
+          CRS: urn:ogc:def:crs:OGC::CRS84<br>
+          FEATURES: <span id="feature-count">0</span><br>
+          BBOX: [-73.99, 40.71, -73.93, 40.78]
+        </div>
+
+        <div class="tab-container">
+          <div class="tab" data-view="scatter">(1) SCAT.</div>
+          <div class="tab" data-view="radius">(2) RAD.</div>
+          <div class="tab" data-view="density">(3) DENS.</div>
+          <div class="tab" data-view="export">(4) EXP.</div>
+        </div>
+      </div>
+
+      <div class="card card-3">
+        <div class="meta"><span>DENSITY ANALYSIS</span></div>
+        <div class="giant-number">(3)</div>
+        <div class="sub-text">GeoJSON<br>Scatter Protocol</div>
+        <div class="sub-numbers">3.1.<br>3.2.</div>
+        <div class="geojson-badge">RFC 7946 § 3.1.2 — POINT</div>
+      </div>
+
+      <div class="card card-4">
+        <div class="meta"><span>STATUS</span></div>
+        <div class="giant-number">(4)</div>
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span>Live Feed Active</span>
+        </div>
+      </div>
+
+      <div class="tension-band"></div>
+      <div class="neon-sticker">GEO<span class="tm">INT</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT: GEO CANVAS ═══ -->
+  <div class="right-col">
+
+    <div class="tactical-canvas" id="map-container">
+      <div class="canvas-label">Fig. 1 — GeoJSON Scatter • Palantir Circle Protocol</div>
+      <div class="canvas-coords" id="cursor-coords">
+        LAT: ---.------<br>
+        LNG: ---.------
+      </div>
+      <div class="crosshair-h" id="crosshair-h"></div>
+      <div class="crosshair-v" id="crosshair-v"></div>
+      <div class="flare-tooltip" id="flare-tooltip"></div>
+    </div>
+
+    <!-- Legend tabs -->
+    <div class="legend-panel" id="legend-tabs">
+      <button class="legend-tab tab-infrastructure" data-target="infrastructure">
+        <span class="dot"></span>(1) BASE
+      </button>
+      <button class="legend-tab tab-pathway" data-target="pathway">
+        <span class="dot"></span>(2) PATH
+      </button>
+      <button class="legend-tab tab-organic" data-target="organic">
+        <span class="dot"></span>(3) ORGN
+      </button>
+      <button class="legend-tab tab-zone" data-target="zone">
+        <span class="dot"></span>(4) ZONE
+      </button>
+    </div>
+
+    <!-- GeoJSON Output Panel -->
+    <div class="geojson-panel">
+      <div class="panel-header">
+        <h3>GeoJSON Output</h3>
+        <span class="rfc-tag">RFC 7946 COMPLIANT</span>
+      </div>
+      <div class="geojson-output" id="geojson-output"></div>
+    </div>
+  </div>
+
+  <!-- ═══ STATS BAR ═══ -->
+  <div class="stats-bar">
+    <div class="stat-cell">
+      <span class="stat-label">Total Features</span>
+      <span class="stat-value" id="stat-total">0</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-label">Infrastructure</span>
+      <span class="stat-value" id="stat-infra">0</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-label">Pathways</span>
+      <span class="stat-value" id="stat-path">0</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-label">Organic</span>
+      <span class="stat-value" id="stat-organic">0</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-label">Zones</span>
+      <span class="stat-value" id="stat-zone">0</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════
+  // GEOJSON ENGINE — RFC 7946 COMPLIANT
+  // ═══════════════════════════════════════════
+
+  // Bounding box for coordinate projection (NYC area)
+  const BBOX = {
+    minLng: -73.995, maxLng: -73.930,
+    minLat: 40.710, maxLat: 40.780
+  };
+
+  // Project GeoJSON coordinates [lng, lat] → canvas [x%, y%]
+  function projectToCanvas(lng, lat) {
+    const x = ((lng - BBOX.minLng) / (BBOX.maxLng - BBOX.minLng)) * 100;
+    const y = (1 - (lat - BBOX.minLat) / (BBOX.maxLat - BBOX.minLat)) * 100;
+    return { x: Math.max(2, Math.min(98, x)), y: Math.max(2, Math.min(98, y)) };
+  }
+
+  // Inverse: canvas position → GeoJSON coordinate
+  function canvasToCoord(xPct, yPct) {
+    const lng = BBOX.minLng + (xPct / 100) * (BBOX.maxLng - BBOX.minLng);
+    const lat = BBOX.minLat + (1 - yPct / 100) * (BBOX.maxLat - BBOX.minLat);
+    return { lng, lat };
+  }
+
+  // Generate RFC 7946 compliant GeoJSON FeatureCollection
+  function generateGeoJSON(features) {
+    return {
+      type: "FeatureCollection",
+      features: features.map((f, i) => ({
+        type: "Feature",
+        id: i,
+        geometry: {
+          type: "Point",
+          coordinates: [f.lng, f.lat]
+        },
+        properties: {
+          category: f.type,
+          timestamp: new Date().toISOString()
+        }
+      }))
+    };
+  }
+
+  // ═══════════════════════════════════════════
+  // PALANTIR-STYLE CIRCLE PROTOCOL
+  // Per Palantir's method: GeoJSON circles as N-vertex
+  // polygons approximating arcs on the WGS84 ellipsoid.
+  // ═══════════════════════════════════════════
+
+  function drawGeoCircle(container, centerLng, centerLat, radiusKm, cssClass, delay) {
+    // Approximate: 1 degree lat ≈ 111km, 1 degree lng ≈ 111km * cos(lat)
+    const latPerKm = 1 / 111;
+    const lngPerKm = 1 / (111 * Math.cos(centerLat * Math.PI / 180));
+
+    const radiusLat = radiusKm * latPerKm;
+    const radiusLng = radiusKm * lngPerKm;
+
+    // Project center
+    const center = projectToCanvas(centerLng, centerLat);
+
+    // Compute pixel radius relative to container
+    const pxRadiusX = (radiusLng / (BBOX.maxLng - BBOX.minLng)) * 100;
+    const pxRadiusY = (radiusLat / (BBOX.maxLat - BBOX.minLat)) * 100;
+    const avgRadius = (pxRadiusX + pxRadiusY) / 2;
+
+    const el = document.createElement('div');
+    el.classList.add('geo-circle', cssClass);
+    el.style.left = center.x + '%';
+    el.style.top = center.y + '%';
+    el.style.width = avgRadius * 2 + '%';
+    el.style.height = avgRadius * 2 + '%';
+    el.style.animationDelay = delay + 's';
+
+    container.appendChild(el);
+  }
+
+  // ═══════════════════════════════════════════
+  // DATA GENERATION — Clustered GeoJSON Features
+  // ═══════════════════════════════════════════
+
+  function generateCluster(type, baseLng, baseLat, count, spreadKm) {
+    const cluster = [];
+    const latSpread = spreadKm / 111;
+    const lngSpread = spreadKm / (111 * Math.cos(baseLat * Math.PI / 180));
+
+    for (let i = 0; i < count; i++) {
+      // Gaussian-ish clustering via sum of randoms
+      const rLng = (Math.random() + Math.random() + Math.random()) / 3;
+      const rLat = (Math.random() + Math.random() + Math.random()) / 3;
+
+      cluster.push({
+        type,
+        lng: baseLng + (rLng - 0.5) * lngSpread * 2,
+        lat: baseLat + (rLat - 0.5) * latSpread * 2
+      });
+    }
+    return cluster;
+  }
+
+  // Build full payload
+  const allFeatures = [
+    ...generateCluster('infrastructure', -73.980, 40.755, 60, 1.2),
+    ...generateCluster('infrastructure', -73.945, 40.725, 35, 0.8),
+    ...generateCluster('pathway', -73.965, 40.740, 80, 2.0),
+    ...generateCluster('organic', -73.955, 40.735, 180, 1.5),
+    ...generateCluster('organic', -73.975, 40.760, 60, 0.6),
+    ...generateCluster('zone', -73.950, 40.750, 100, 1.8)
+  ];
+
+  // ═══════════════════════════════════════════
+  // RENDER ENGINE
+  // ═══════════════════════════════════════════
+
+  const container = document.getElementById('map-container');
+  const renderedNodes = [];
+
+  // Category sizes
+  const sizeMap = {
+    infrastructure: 3,
+    pathway: 4,
+    organic: 5,
+    zone: 5
+  };
+
+  const colorMap = {
+    infrastructure: '#151515',
+    pathway: '#FF6600',
+    organic: '#FF007F',
+    zone: '#E5FF00'
+  };
+
+  // Render scatter plot
+  function renderScatterPlot(features) {
+    const fragment = document.createDocumentFragment();
+
+    // Sort by z-index order: infrastructure → pathway → organic → zone
+    const order = ['infrastructure', 'pathway', 'organic', 'zone'];
+    const sorted = [...features].sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+
+    sorted.forEach(f => {
+      const pos = projectToCanvas(f.lng, f.lat);
+      const node = document.createElement('div');
+      node.classList.add('data-node');
+      node.dataset.category = f.type;
+      node.dataset.lng = f.lng.toFixed(6);
+      node.dataset.lat = f.lat.toFixed(6);
+
+      const size = sizeMap[f.type] || 4;
+      node.style.width = size + 'px';
+      node.style.height = size + 'px';
+      node.style.backgroundColor = colorMap[f.type];
+      node.style.left = pos.x + '%';
+      node.style.top = pos.y + '%';
+
+      fragment.appendChild(node);
+      renderedNodes.push(node);
+    });
+
+    container.appendChild(fragment);
+  }
+
+  renderScatterPlot(allFeatures);
+
+  // Draw Palantir-style radius circles
+  drawGeoCircle(container, -73.955, 40.735, 0.8, 'radius-pink', 0.8);
+  drawGeoCircle(container, -73.980, 40.755, 1.0, 'radius-blue', 1.0);
+  drawGeoCircle(container, -73.950, 40.750, 1.5, 'fill-zone', 1.2);
+  drawGeoCircle(container, -73.965, 40.740, 0.6, 'radius-orange', 1.4);
+
+  // ═══════════════════════════════════════════
+  // LEGEND FILTER LOGIC
+  // ═══════════════════════════════════════════
+
+  const activeFilters = { infrastructure: true, pathway: true, organic: true, zone: true };
+
+  document.querySelectorAll('.legend-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const cat = tab.dataset.target;
+      if (!cat) return;
+
+      activeFilters[cat] = !activeFilters[cat];
+      tab.classList.toggle('is-disabled', !activeFilters[cat]);
+
+      renderedNodes.forEach(node => {
+        if (node.dataset.category === cat) {
+          node.classList.toggle('is-hidden', !activeFilters[cat]);
+        }
+      });
+
+      updateStats();
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // CROSSHAIR + TOOLTIP
+  // ═══════════════════════════════════════════
+
+  const crossH = document.getElementById('crosshair-h');
+  const crossV = document.getElementById('crosshair-v');
+  const cursorCoords = document.getElementById('cursor-coords');
+  const tooltip = document.getElementById('flare-tooltip');
+
+  container.addEventListener('mousemove', (e) => {
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const xPct = (x / rect.width) * 100;
+    const yPct = (y / rect.height) * 100;
+
+    crossH.style.display = 'block';
+    crossV.style.display = 'block';
+    crossH.style.top = y + 'px';
+    crossV.style.left = x + 'px';
+
+    const coord = canvasToCoord(xPct, yPct);
+    cursorCoords.innerHTML = `LAT: ${coord.lat.toFixed(6)}<br>LNG: ${coord.lng.toFixed(6)}`;
+  });
+
+  container.addEventListener('mouseleave', () => {
+    crossH.style.display = 'none';
+    crossV.style.display = 'none';
+    cursorCoords.innerHTML = 'LAT: ---.------<br>LNG: ---.------';
+  });
+
+  // Node hover tooltip
+  container.addEventListener('mouseover', (e) => {
+    if (e.target.classList.contains('data-node')) {
+      const node = e.target;
+      tooltip.style.display = 'block';
+      tooltip.innerHTML = `${node.dataset.category.toUpperCase()} | ${node.dataset.lat}, ${node.dataset.lng}`;
+
+      const rect = container.getBoundingClientRect();
+      const nx = e.clientX - rect.left;
+      const ny = e.clientY - rect.top;
+      tooltip.style.left = (nx + 12) + 'px';
+      tooltip.style.top = (ny - 20) + 'px';
+
+      // Flare effect
+      node.style.transform = 'translate(-50%, -50%) scale(3)';
+      node.style.boxShadow = `0 0 8px ${colorMap[node.dataset.category]}`;
+    }
+  });
+
+  container.addEventListener('mouseout', (e) => {
+    if (e.target.classList.contains('data-node')) {
+      tooltip.style.display = 'none';
+      e.target.style.transform = 'translate(-50%, -50%) scale(1)';
+      e.target.style.boxShadow = 'none';
+    }
+  });
+
+  // ═══════════════════════════════════════════
+  // GEOJSON OUTPUT PANEL
+  // ═══════════════════════════════════════════
+
+  function renderGeoJSONPreview() {
+    const visible = allFeatures.filter(f => activeFilters[f.type]);
+    const geojson = generateGeoJSON(visible);
+    const output = document.getElementById('geojson-output');
+
+    // Syntax-highlighted JSON
+    const json = JSON.stringify(geojson, null, 2);
+    const highlighted = json
+      .replace(/"([^"]+)":/g, '<span class="key">"$1"</span>:')
+      .replace(/: "([^"]+)"/g, ': <span class="str">"$1"</span>')
+      .replace(/: (-?\d+\.?\d*)/g, ': <span class="num">$1</span>');
+
+    output.innerHTML = highlighted;
+  }
+
+  renderGeoJSONPreview();
+
+  // ═══════════════════════════════════════════
+  // STATS
+  // ═══════════════════════════════════════════
+
+  function updateStats() {
+    const visible = allFeatures.filter(f => activeFilters[f.type]);
+    document.getElementById('stat-total').textContent = visible.length;
+    document.getElementById('stat-infra').textContent = visible.filter(f => f.type === 'infrastructure').length;
+    document.getElementById('stat-path').textContent = visible.filter(f => f.type === 'pathway').length;
+    document.getElementById('stat-organic').textContent = visible.filter(f => f.type === 'organic').length;
+    document.getElementById('stat-zone').textContent = visible.filter(f => f.type === 'zone').length;
+    document.getElementById('feature-count').textContent = visible.length;
+
+    renderGeoJSONPreview();
+  }
+
+  updateStats();
+
+  // ═══════════════════════════════════════════
+  // LIVE CLOCK
+  // ═══════════════════════════════════════════
+
+  function updateClock() {
+    document.getElementById('live-clock').textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + 'Z';
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+</script>
+</body>
+</html>
