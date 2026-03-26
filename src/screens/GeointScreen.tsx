@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GeoJSONPanel } from '../components/GeoJSONPanel';
 import { LegacyTacticalCanvas } from '../components/LegacyTacticalCanvas';
 import { LayerPanel } from '../components/LayerPanel';
+import { MapPaneErrorBoundary } from '../components/MapPaneErrorBoundary';
 import { TacticalCanvas } from '../components/TacticalCanvas';
 import type {
   FeatureSummary,
@@ -9,6 +10,7 @@ import type {
   LayerDefinition,
   MapFeatureRef,
   MapFocusRequest,
+  MapHealthState,
   MapViewportState,
 } from '../types';
 import { ModuleDeskLayout } from './ModuleDeskLayout';
@@ -19,11 +21,9 @@ interface Props {
   featureCount: number;
   featureSummary: FeatureSummary;
   selectedFeatureRef: MapFeatureRef | null;
-  hoveredFeatureRef: MapFeatureRef | null;
   selectedFeature: GeoJsonFeature | null;
-  hoveredFeature: GeoJsonFeature | null;
   activeLayer: LayerDefinition | null;
-  viewport: MapViewportState;
+  initialViewport: MapViewportState;
   focusRequest: MapFocusRequest | null;
   statusMessage: string | null;
   onSetActiveLayer: (layerId: string) => void;
@@ -35,8 +35,6 @@ interface Props {
   onImportFile: (file: File) => void;
   onImportUrl: (url: string) => Promise<void>;
   onSelectedFeatureChange: (featureRef: MapFeatureRef | null) => void;
-  onHoveredFeatureChange: (featureRef: MapFeatureRef | null) => void;
-  onViewportChange: (viewport: MapViewportState) => void;
   onFocusRequestHandled: (token: number) => void;
 }
 
@@ -46,11 +44,9 @@ export function GeointScreen({
   featureCount,
   featureSummary,
   selectedFeatureRef,
-  hoveredFeatureRef,
   selectedFeature,
-  hoveredFeature,
   activeLayer,
-  viewport,
+  initialViewport,
   focusRequest,
   statusMessage,
   onSetActiveLayer,
@@ -62,71 +58,97 @@ export function GeointScreen({
   onImportFile,
   onImportUrl,
   onSelectedFeatureChange,
-  onHoveredFeatureChange,
-  onViewportChange,
   onFocusRequestHandled,
 }: Props) {
-  const [viewMode, setViewMode] = useState<'dual' | 'layer' | 'legacy'>('dual');
+  const [viewportSnapshot, setViewportSnapshot] = useState<MapViewportState>(initialViewport);
+  const [mapHealth, setMapHealth] = useState<MapHealthState>('ready');
+  const [mapHealthDetail, setMapHealthDetail] = useState<string | null>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  const handleMapHealthChange = (state: MapHealthState, details?: string) => {
+    setMapHealth(state);
+    setMapHealthDetail(details ?? null);
+  };
+
+  const handleReloadPane = () => {
+    setReloadNonce((current) => current + 1);
+    setMapHealth('ready');
+    setMapHealthDetail(null);
+  };
+
+  const healthTone =
+    mapHealth === 'failed'
+      ? 'border-alert-red/45 bg-alert-red/10 text-alert-red'
+      : mapHealth === 'degraded'
+        ? 'border-flare-orange/45 bg-flare-orange/10 text-flare-orange'
+        : 'border-radar-blue/35 bg-radar-blue/10 text-radar-blue';
 
   return (
     <ModuleDeskLayout featureCount={featureCount} featureSummary={featureSummary}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="font-mono text-[0.58rem] uppercase tracking-[0.24em] text-[#7d8a90]">
-          GEOINT Surfaces
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="font-mono text-[0.58rem] uppercase tracking-[0.24em] text-[#7d8a90]">GEOINT Surfaces</div>
+          <div className="mt-1 font-mono text-[0.54rem] uppercase tracking-[0.22em] text-[#9aa8ad]">
+            Dual surfaces locked for stability
+          </div>
         </div>
-        <div className="flex border border-[#2a3338] bg-[#0b1012]">
-          {([
-            ['dual', 'Dual'],
-            ['layer', 'Layer'],
-            ['legacy', 'Legacy'],
-          ] as const).map(([mode, label]) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setViewMode(mode)}
-              className={`px-3 py-2 font-mono text-[0.55rem] uppercase tracking-[0.22em] transition-colors ${
-                viewMode === mode ? 'bg-acid-yellow text-ink' : 'text-archival-white hover:bg-[#151b1f]'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className={`border px-3 py-2 font-mono text-[0.55rem] uppercase tracking-[0.22em] ${healthTone}`}>
+          Layer Engine {mapHealth}
+          {mapHealthDetail ? ` / ${mapHealthDetail}` : ''}
         </div>
       </div>
 
-      <div className={`grid gap-4 ${viewMode === 'dual' ? 'xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:items-start' : ''}`}>
-        {viewMode !== 'legacy' && (
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:items-start">
+        <MapPaneErrorBoundary
+          resetKey={reloadNonce}
+          onError={(error) => handleMapHealthChange('failed', error.message)}
+          fallback={
+            <div className="flex h-[560px] items-center justify-center border-2 border-alert-red/40 bg-[#0b1012] p-6 text-center shadow-[4px_6px_15px_rgba(0,0,0,0.6)]">
+              <div className="max-w-[340px] font-mono text-archival-white">
+                <div className="text-[0.56rem] uppercase tracking-[0.24em] text-alert-red">Layer Engine Crashed</div>
+                <div className="mt-3 text-[0.92rem] font-semibold">Legacy tactical pane is still available.</div>
+                <button
+                  type="button"
+                  onClick={handleReloadPane}
+                  className="mt-4 border border-acid-yellow/45 px-3 py-2 text-[0.58rem] uppercase tracking-[0.22em] text-acid-yellow transition-colors hover:bg-acid-yellow hover:text-ink"
+                >
+                  Reload Layer Engine
+                </button>
+              </div>
+            </div>
+          }
+        >
           <TacticalCanvas
+            key={reloadNonce}
             layers={layers}
             activeLayerId={activeLayerId}
             selectedFeatureRef={selectedFeatureRef}
-            hoveredFeatureRef={hoveredFeatureRef}
             focusRequest={focusRequest}
-            viewport={viewport}
+            initialViewport={initialViewport}
             onActiveLayerChange={onSetActiveLayer}
             onSelectedFeatureChange={onSelectedFeatureChange}
-            onHoveredFeatureChange={onHoveredFeatureChange}
-            onViewportChange={onViewportChange}
+            onViewportSnapshotChange={setViewportSnapshot}
+            onMapHealthChange={handleMapHealthChange}
             onFocusRequestHandled={onFocusRequestHandled}
+            onReloadRequest={handleReloadPane}
           />
-        )}
+        </MapPaneErrorBoundary>
 
-        {viewMode !== 'layer' && (
-          <LegacyTacticalCanvas
-            layers={layers}
-            activeLayerId={activeLayerId}
-            selectedFeatureRef={selectedFeatureRef}
-            onActiveLayerChange={onSetActiveLayer}
-            onSelectedFeatureChange={onSelectedFeatureChange}
-          />
-        )}
+        <LegacyTacticalCanvas
+          layers={layers}
+          activeLayerId={activeLayerId}
+          selectedFeatureRef={selectedFeatureRef}
+          onActiveLayerChange={onSetActiveLayer}
+          onSelectedFeatureChange={onSelectedFeatureChange}
+        />
       </div>
+
       <div className="grid gap-4 xl:grid-cols-[minmax(280px,0.95fr)_minmax(0,1.05fr)]">
         <LayerPanel
           layers={layers}
           activeLayerId={activeLayerId}
           selectedFeatureRef={selectedFeatureRef}
-          viewport={viewport}
+          viewport={viewportSnapshot}
           statusMessage={statusMessage}
           onSetActiveLayer={onSetActiveLayer}
           onToggleVisibility={onToggleVisibility}
@@ -137,12 +159,7 @@ export function GeointScreen({
           onImportFile={onImportFile}
           onImportUrl={onImportUrl}
         />
-        <GeoJSONPanel
-          activeLayer={activeLayer}
-          selectedFeature={selectedFeature}
-          hoveredFeature={hoveredFeature}
-          viewport={viewport}
-        />
+        <GeoJSONPanel activeLayer={activeLayer} selectedFeature={selectedFeature} viewport={viewportSnapshot} />
       </div>
     </ModuleDeskLayout>
   );

@@ -139,6 +139,7 @@ export function LegacyTacticalCanvas({
 
   return (
     <motion.div
+      data-testid="geoint-legacy-surface"
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35, duration: 0.5, ease: 'easeOut' }}

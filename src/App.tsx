@@ -85,20 +85,18 @@ export default function App() {
   const [geoLayers, setGeoLayers] = useState<LayerDefinition[]>(() => buildInitialGeoLayers(allFeatures));
   const [activeLayerId, setActiveLayerId] = useState<string | null>(() => buildInitialGeoLayers(allFeatures)[0]?.id ?? null);
   const [selectedFeatureRef, setSelectedFeatureRef] = useState<MapFeatureRef | null>(null);
-  const [hoveredFeatureRef, setHoveredFeatureRef] = useState<MapFeatureRef | null>(null);
-  const [mapViewport, setMapViewport] = useState<MapViewportState>({
+  const initialMapViewport: MapViewportState = {
     center: [-73.965, 40.745],
     zoom: 12.35,
-    bearing: -8,
-    pitch: 45,
-  });
+    bearing: 0,
+    pitch: 0,
+  };
   const [focusRequest, setFocusRequest] = useState<MapFocusRequest | null>(null);
   const [geoIntStatus, setGeoIntStatus] = useState<string | null>('Loaded 5 prototype layers');
 
   const featureSummary = useMemo(() => getLayerFeatureSummary(geoLayers), [geoLayers]);
   const activeLayer = useMemo(() => getLayerById(geoLayers, activeLayerId), [geoLayers, activeLayerId]);
   const selectedFeature = useMemo(() => getFeatureByRef(geoLayers, selectedFeatureRef), [geoLayers, selectedFeatureRef]);
-  const hoveredFeature = useMemo(() => getFeatureByRef(geoLayers, hoveredFeatureRef), [geoLayers, hoveredFeatureRef]);
 
   const appendImportedLayer = useCallback((name: string, sourceType: LayerDefinition['sourceType'], sourceConfig: LayerDefinition['sourceConfig'], rawInput: unknown) => {
     const collection = normalizeGeoJsonInput(rawInput);
@@ -131,7 +129,6 @@ export default function App() {
 
     setActiveLayerId(nextLayerId);
     setSelectedFeatureRef(null);
-    setHoveredFeatureRef(null);
     setGeoIntStatus(`Imported ${name}`);
   }, []);
 
@@ -246,9 +243,9 @@ export default function App() {
       <AnimatePresence mode="wait">
         <motion.div
           key={activeModule}
-          initial={{ opacity: 0, y: 18, filter: 'blur(6px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, y: -12, filter: 'blur(4px)' }}
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.28, ease: 'easeOut' }}
           className="flex-1"
         >
@@ -265,11 +262,9 @@ export default function App() {
               featureCount={featureSummary.total}
               featureSummary={featureSummary}
               selectedFeatureRef={selectedFeatureRef}
-              hoveredFeatureRef={hoveredFeatureRef}
               selectedFeature={selectedFeature}
-              hoveredFeature={hoveredFeature}
               activeLayer={activeLayer}
-              viewport={mapViewport}
+              initialViewport={initialMapViewport}
               focusRequest={focusRequest}
               statusMessage={geoIntStatus}
               onSetActiveLayer={setActiveLayerId}
@@ -281,8 +276,6 @@ export default function App() {
               onImportFile={handleImportGeoJsonFile}
               onImportUrl={handleImportGeoJsonUrl}
               onSelectedFeatureChange={handleSelectedFeatureChange}
-              onHoveredFeatureChange={setHoveredFeatureRef}
-              onViewportChange={setMapViewport}
               onFocusRequestHandled={(token) => {
                 setFocusRequest((current) => current?.token === token ? null : current);
               }}

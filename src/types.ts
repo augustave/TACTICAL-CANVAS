@@ -138,6 +138,8 @@ export interface MapViewportState {
   pitch: number;
 }
 
+export type MapHealthState = 'ready' | 'degraded' | 'failed';
+
 export interface MapFocusRequest {
   kind: 'layer' | 'feature';
   layerId: string;
