@@ -48,7 +48,7 @@ const DOSSIER_SECTIONS: DossierSection[] = [
     eyebrowRight: 'WGS 84',
     tone: 'bg-grey-mid',
     textTone: 'text-ink',
-    cardClassName: 'absolute top-0 right-[50px] w-[48%] h-[55%] z-20 p-4',
+    cardClassName: 'absolute top-0 right-[26px] w-[50%] h-[55%] z-20 p-4',
     numberClassName: 'text-[8rem] leading-[0.85] text-center font-light tracking-[-4px]',
     summary: 'Reference frame aligned to the current operating box.',
     details: ['CRS84', 'FEATURE WINDOW', 'MAP BOUNDS'],
@@ -82,7 +82,7 @@ const DOSSIER_SECTIONS: DossierSection[] = [
     eyebrowRight: '',
     tone: 'bg-leather',
     textTone: 'text-archival-white',
-    cardClassName: 'absolute bottom-0 right-[50px] w-[42%] h-[40%] z-40 p-4',
+    cardClassName: 'absolute bottom-0 right-[22px] w-[44%] h-[40%] z-40 p-4',
     numberClassName: 'text-[8rem] leading-[0.85] text-center font-light tracking-[-4px]',
     summary: 'Feed state and export readiness tracked against the active dossier.',
     details: ['LIVE FEED', 'EXPORT STAGED', 'STATUS HOT'],
@@ -128,7 +128,7 @@ export function DossierStack({ featureCount }: { featureCount: number }) {
   };
 
   return (
-    <div className="relative mx-auto h-[500px] w-full max-w-[480px] -rotate-[0.8deg] lg:h-[560px]">
+    <div className="relative mx-auto h-[500px] w-full max-w-[500px] -rotate-[0.8deg] lg:h-[560px]">
       {DOSSIER_SECTIONS.map((section, i) => {
         const isActive = section.id === activeSectionId;
         const offset = sectionOffset(section.id, activeSectionId);
@@ -199,7 +199,7 @@ export function DossierStack({ featureCount }: { featureCount: number }) {
         );
       })}
 
-      <div className="absolute top-[8%] -right-[42px] z-[70] flex flex-col gap-1">
+      <div className="absolute top-[8%] right-[6px] z-[70] flex flex-col gap-1">
         {DOSSIER_SECTIONS.map((section) => {
           const isActive = section.id === activeSectionId;
 
