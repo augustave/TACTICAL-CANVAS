@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import type { BBox, GeoJsonFeature, GeoJsonGeometry, GeoJsonPosition, GeointViewportState, LayerDefinition, MapFeatureRef, MapFocusRequest } from '../types';
 import { computeFeatureBounds, computeFeatureCollectionBounds, getFeatureByRef, getLayerById } from '../utils/geojson';
@@ -169,6 +169,7 @@ export function GeointSurface({
   const draggingRef = useRef(false);
   const suppressClickRef = useRef(false);
 
+  const [isDragging, setIsDragging] = useState(false);
   const [cursor, setCursor] = useState({ x: 0, y: 0, show: false, lat: 0, lng: 0 });
   const [hoveredFeature, setHoveredFeature] = useState<{ layerId: string; feature: GeoJsonFeature; mouseX: number; mouseY: number } | null>(null);
   const [gridDensity, setGridDensity] = useState<'sparse' | 'normal' | 'dense'>('normal');
@@ -210,6 +211,14 @@ export function GeointSurface({
   }, [viewportBounds]);
   const activeAccent = activeLayer?.style.outlineColor ?? activeLayer?.style.color ?? '#E5FF00';
   const activeModeLabel = activeLayer?.displayModes.join(' / ').toUpperCase() ?? 'NO DISPLAY';
+  const stopDragging = useCallback(() => {
+    dragStartRef.current = null;
+    setIsDragging(false);
+    setTimeout(() => {
+      draggingRef.current = false;
+      suppressClickRef.current = false;
+    }, 0);
+  }, []);
 
   useEffect(() => {
     setViewportBounds((current) => clampViewportBounds(current, sceneBounds));
@@ -260,11 +269,7 @@ export function GeointSurface({
     };
 
     const handleWindowMouseUp = () => {
-      dragStartRef.current = null;
-      setTimeout(() => {
-        draggingRef.current = false;
-        suppressClickRef.current = false;
-      }, 0);
+      stopDragging();
     };
 
     window.addEventListener('mousemove', handleWindowMouseMove);
@@ -274,7 +279,7 @@ export function GeointSurface({
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, [sceneBounds]);
+  }, [sceneBounds, stopDragging]);
 
   const gridSettings = {
     sparse: { major: '20%', minor: '4%' },
@@ -319,6 +324,7 @@ export function GeointSurface({
       y: event.clientY,
       bbox: viewportBounds,
     };
+    setIsDragging(true);
   };
 
   const handleWheel = (event: React.WheelEvent) => {
@@ -341,13 +347,14 @@ export function GeointSurface({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.4, ease: 'easeOut' }}
-      className="relative w-full aspect-[4/3] cursor-crosshair overflow-hidden border-2 border-ink bg-terrain-grey shadow-[4px_6px_15px_rgba(0,0,0,0.6)] tactical-canvas-bg"
+      className={`relative w-full aspect-[4/3] overflow-hidden border-2 border-ink bg-terrain-grey shadow-[4px_6px_15px_rgba(0,0,0,0.6)] tactical-canvas-bg ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
       ref={containerRef}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => {
         setCursor((prev) => ({ ...prev, show: false }));
         setHoveredFeature(null);
+        stopDragging();
       }}
       onWheel={handleWheel}
     >
