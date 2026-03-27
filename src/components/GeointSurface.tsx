@@ -135,6 +135,25 @@ function zoomBBox(bbox: BBox, xRatio: number, yRatio: number, scaleFactor: numbe
   return [nextMinLng, nextMinLat, nextMaxLng, nextMaxLat];
 }
 
+function clampViewportBounds(nextBounds: BBox, sceneBounds: BBox): BBox {
+  const sceneLngSpan = sceneBounds[2] - sceneBounds[0];
+  const sceneLatSpan = sceneBounds[3] - sceneBounds[1];
+  const nextLngSpan = nextBounds[2] - nextBounds[0];
+  const nextLatSpan = nextBounds[3] - nextBounds[1];
+  const minLngSpan = Math.max(sceneLngSpan * 0.14, 0.004);
+  const minLatSpan = Math.max(sceneLatSpan * 0.14, 0.004);
+  const clampedLngSpan = Math.min(Math.max(nextLngSpan, minLngSpan), sceneLngSpan);
+  const clampedLatSpan = Math.min(Math.max(nextLatSpan, minLatSpan), sceneLatSpan);
+  let [centerLng, centerLat] = bboxCenter(nextBounds);
+  const halfLng = clampedLngSpan / 2;
+  const halfLat = clampedLatSpan / 2;
+
+  centerLng = Math.max(sceneBounds[0] + halfLng, Math.min(sceneBounds[2] - halfLng, centerLng));
+  centerLat = Math.max(sceneBounds[1] + halfLat, Math.min(sceneBounds[3] - halfLat, centerLat));
+
+  return [centerLng - halfLng, centerLat - halfLat, centerLng + halfLng, centerLat + halfLat];
+}
+
 export function GeointSurface({
   layers,
   activeLayerId,
@@ -163,10 +182,37 @@ export function GeointSurface({
     [layers],
   );
   const sceneBounds = useMemo(() => collectSceneBounds(layers), [layers]);
+  const activeLayer = useMemo(
+    () => (activeLayerId ? getLayerById(layers, activeLayerId) : visibleLayers[visibleLayers.length - 1] ?? null),
+    [activeLayerId, layers, visibleLayers],
+  );
   const selectedFeature = useMemo(() => getFeatureByRef(layers, selectedFeatureRef), [layers, selectedFeatureRef]);
+  const selectedFeatureBounds = useMemo(
+    () => (selectedFeature ? selectedFeature.bbox ?? computeFeatureBounds(selectedFeature) : undefined),
+    [selectedFeature],
+  );
+  const selectedFeatureAnchor = useMemo(() => {
+    if (!selectedFeatureBounds) {
+      return null;
+    }
+
+    const [lng, lat] = bboxCenter(selectedFeatureBounds);
+    return projectPosition([lng, lat], viewportBounds);
+  }, [selectedFeatureBounds, viewportBounds]);
+  const visibleFeatureCount = useMemo(
+    () => visibleLayers.reduce((count, layer) => count + layer.data.features.length, 0),
+    [visibleLayers],
+  );
+  const sceneWidthKm = useMemo(() => {
+    const latMid = (viewportBounds[1] + viewportBounds[3]) / 2;
+    const lngSpan = Math.abs(viewportBounds[2] - viewportBounds[0]) * 111.32 * Math.cos((latMid * Math.PI) / 180);
+    return Math.max(lngSpan, 0.1);
+  }, [viewportBounds]);
+  const activeAccent = activeLayer?.style.outlineColor ?? activeLayer?.style.color ?? '#E5FF00';
+  const activeModeLabel = activeLayer?.displayModes.join(' / ').toUpperCase() ?? 'NO DISPLAY';
 
   useEffect(() => {
-    setViewportBounds(sceneBounds);
+    setViewportBounds((current) => clampViewportBounds(current, sceneBounds));
   }, [sceneBounds[0], sceneBounds[1], sceneBounds[2], sceneBounds[3]]);
 
   useEffect(() => {
@@ -182,18 +228,18 @@ export function GeointSurface({
       const layer = getLayerById(layers, focusRequest.layerId);
       const bbox = layer ? computeFeatureCollectionBounds(layer.data) : undefined;
       if (bbox) {
-        setViewportBounds(expandBBox(bbox, 0.12));
+        setViewportBounds(clampViewportBounds(expandBBox(bbox, 0.12), sceneBounds));
       }
     } else {
       const feature = getFeatureByRef(layers, { layerId: focusRequest.layerId, featureId: focusRequest.featureId ?? '' });
       const bbox = feature ? (feature.bbox ?? computeFeatureBounds(feature)) : undefined;
       if (bbox) {
-        setViewportBounds(expandBBox(bbox, 0.4));
+        setViewportBounds(clampViewportBounds(expandBBox(bbox, 0.4), sceneBounds));
       }
     }
 
     onFocusRequestHandled(focusRequest.token);
-  }, [focusRequest, layers, onFocusRequestHandled]);
+  }, [focusRequest, layers, onFocusRequestHandled, sceneBounds]);
 
   useEffect(() => {
     const handleWindowMouseMove = (event: MouseEvent) => {
@@ -210,7 +256,7 @@ export function GeointSurface({
         suppressClickRef.current = true;
       }
 
-      setViewportBounds(translateBBox(dragStartRef.current.bbox, dxRatio, dyRatio));
+      setViewportBounds(clampViewportBounds(translateBBox(dragStartRef.current.bbox, dxRatio, dyRatio), sceneBounds));
     };
 
     const handleWindowMouseUp = () => {
@@ -228,7 +274,7 @@ export function GeointSurface({
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, []);
+  }, [sceneBounds]);
 
   const gridSettings = {
     sparse: { major: '20%', minor: '4%' },
@@ -282,11 +328,11 @@ export function GeointSurface({
     const xRatio = (event.clientX - rect.left) / rect.width;
     const yRatio = (event.clientY - rect.top) / rect.height;
     const scaleFactor = event.deltaY < 0 ? 0.86 : 1.18;
-    setViewportBounds((current) => zoomBBox(current, xRatio, yRatio, scaleFactor));
+    setViewportBounds((current) => clampViewportBounds(zoomBBox(current, xRatio, yRatio, scaleFactor), sceneBounds));
   };
 
   const zoomFromCenter = (direction: 'in' | 'out') => {
-    setViewportBounds((current) => zoomBBox(current, 0.5, 0.5, direction === 'in' ? 0.86 : 1.18));
+    setViewportBounds((current) => clampViewportBounds(zoomBBox(current, 0.5, 0.5, direction === 'in' ? 0.86 : 1.18), sceneBounds));
   };
 
   return (
@@ -306,6 +352,15 @@ export function GeointSurface({
       onWheel={handleWheel}
     >
       <div
+        className="pointer-events-none absolute inset-0 z-[1] opacity-90"
+        style={{
+          background: cursor.show
+            ? `radial-gradient(circle at ${cursor.x}px ${cursor.y}px, rgba(41,165,255,0.12), rgba(41,165,255,0.05) 12%, rgba(0,0,0,0) 36%)`
+            : 'radial-gradient(circle at 50% 50%, rgba(41,165,255,0.06), rgba(0,0,0,0) 45%)',
+        }}
+      />
+
+      <div
         className="absolute inset-0 pointer-events-none z-[2]"
         style={{
           backgroundImage: `
@@ -323,6 +378,22 @@ export function GeointSurface({
           backgroundPosition: '-1px -1px',
         }}
       />
+
+      <motion.div
+        className="pointer-events-none absolute inset-y-0 left-[-34%] z-[3] w-[38%] opacity-70"
+        animate={{ x: ['0%', '240%'] }}
+        transition={{ repeat: Infinity, duration: 11, ease: 'linear' }}
+        style={{
+          background: 'linear-gradient(90deg, rgba(0,0,0,0), rgba(41,165,255,0.03), rgba(229,255,0,0.12), rgba(41,165,255,0.03), rgba(0,0,0,0))',
+        }}
+      />
+
+      <div className="pointer-events-none absolute inset-0 z-[4]">
+        <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/5" />
+        <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-white/5" />
+        <div className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
+        <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5" />
+      </div>
 
       <div
         className="absolute left-3 top-3 z-[100] flex flex-col gap-1.5 pointer-events-auto"
@@ -393,6 +464,34 @@ export function GeointSurface({
         >
           WX DATA
         </button>
+      </div>
+
+      <div className="pointer-events-none absolute left-1/2 top-3 z-[100] hidden min-w-[220px] w-[45%] max-w-[420px] -translate-x-1/2 border border-white/10 bg-black/62 px-4 py-3 font-mono text-[0.55rem] text-[#a8b6bc] shadow-[0_12px_28px_rgba(0,0,0,0.35)] md:block">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="uppercase tracking-[0.24em] text-[#7e8b91]">Spatial Runtime</div>
+            <div className="mt-1 text-[0.74rem] font-semibold uppercase tracking-[0.14em] text-archival-white">
+              {activeLayer?.name ?? 'No active layer'}
+            </div>
+            <div className="mt-1 uppercase tracking-[0.18em]" style={{ color: activeAccent }}>
+              {activeModeLabel}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 text-right">
+            <div>
+              <div className="uppercase tracking-[0.18em] text-[#6f7c82]">Layers</div>
+              <div className="mt-1 text-archival-white">{visibleLayers.length}</div>
+            </div>
+            <div>
+              <div className="uppercase tracking-[0.18em] text-[#6f7c82]">Features</div>
+              <div className="mt-1 text-archival-white">{visibleFeatureCount}</div>
+            </div>
+            <div>
+              <div className="uppercase tracking-[0.18em] text-[#6f7c82]">Window</div>
+              <div className="mt-1 text-archival-white">{sceneWidthKm.toFixed(1)} km</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="absolute right-3 top-3 z-[100] flex flex-col gap-1.5" data-geoint-control="true">
@@ -506,6 +605,25 @@ export function GeointSurface({
         ))}
       </svg>
 
+      {selectedFeatureAnchor && (
+        <div
+          className="pointer-events-none absolute z-[90] -translate-x-1/2 -translate-y-1/2"
+          style={{ left: `${selectedFeatureAnchor.x}%`, top: `${selectedFeatureAnchor.y}%` }}
+        >
+          <motion.div
+            animate={{ scale: [1, 1.85, 1], opacity: [0.55, 0, 0.55] }}
+            transition={{ repeat: Infinity, duration: 2.4, ease: 'easeOut' }}
+            className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-acid-yellow/50"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.22, 1] }}
+            transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+            className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border border-radar-blue/55"
+          />
+          <div className="relative h-2.5 w-2.5 rounded-full border border-ink bg-acid-yellow shadow-[0_0_12px_rgba(229,255,0,0.4)]" />
+        </div>
+      )}
+
       <div className="pointer-events-none absolute bottom-3 left-3 z-[100] border border-[#394246] bg-black/72 px-3 py-2 font-mono text-[0.55rem] text-[#9aaab0]">
         <div>LAT {cursor.show ? cursor.lat.toFixed(5) : '---.-----'}</div>
         <div>LNG {cursor.show ? cursor.lng.toFixed(5) : '---.-----'}</div>
@@ -542,6 +660,7 @@ export function GeointSurface({
         <div className="absolute bottom-3 right-3 z-[110] border border-radar-blue/30 bg-black/72 px-3 py-2 font-mono text-[0.55rem] text-archival-white">
           <div className="uppercase tracking-[0.22em] text-radar-blue">Selected</div>
           <div className="mt-1">{selectedFeature.properties.name ?? selectedFeature.id}</div>
+          <div className="mt-1 uppercase tracking-[0.18em] text-[#8e9ba2]">{selectedFeature.geometry.type}</div>
         </div>
       )}
     </motion.div>

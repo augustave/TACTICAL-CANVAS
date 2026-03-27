@@ -65,13 +65,13 @@ export function GeointScreen({
     <ModuleDeskLayout featureCount={featureCount} featureSummary={featureSummary}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="font-mono text-[0.58rem] uppercase tracking-[0.24em] text-[#7d8a90]">GEOINT Surfaces</div>
+          <div className="font-mono text-[0.58rem] uppercase tracking-[0.24em] text-[#7d8a90]">GEOINT Runtime</div>
           <div className="mt-1 font-mono text-[0.54rem] uppercase tracking-[0.22em] text-[#9aa8ad]">
-            Primary 2D operational renderer
+            Bounded 2D scene graph with scan-led spatial telemetry
           </div>
         </div>
         <div className="border border-radar-blue/35 bg-radar-blue/10 px-3 py-2 font-mono text-[0.55rem] uppercase tracking-[0.22em] text-radar-blue">
-          2D Surface Stable / WebGL Path Removed
+          Stable 2D Primary / Spatial Motion Pass Active
         </div>
       </div>
 

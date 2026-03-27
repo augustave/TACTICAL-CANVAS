@@ -13,7 +13,7 @@ test('GEOINT stays interactive during drag, zoom, and layer actions', async ({ p
 
   await expect(page.getByTestId('geoint-surface')).toBeVisible();
   await expect(page.getByText('Layer Inspector')).toBeVisible();
-  await expect(page.getByText('2D Surface Stable / WebGL Path Removed')).toBeVisible();
+  await expect(page.getByText('Stable 2D Primary / Spatial Motion Pass Active')).toBeVisible();
 
   const surface = page.getByTestId('geoint-surface');
   const box = await surface.boundingBox();
