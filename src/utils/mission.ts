@@ -8,6 +8,77 @@ export interface MissionMetric {
   detail: string;
 }
 
+export type MissionThreadState = 'idle' | 'asset-selected' | 'target-selected' | 'correlated' | 'tasked';
+
+export function getMissionThreadState(mission: MissionState): MissionThreadState {
+  if (mission.currentTask) {
+    return 'tasked';
+  }
+
+  if (mission.selectedAssetId && mission.selectedTargetId) {
+    return 'correlated';
+  }
+
+  if (mission.selectedAssetId) {
+    return 'asset-selected';
+  }
+
+  if (mission.selectedTargetId) {
+    return 'target-selected';
+  }
+
+  return 'idle';
+}
+
+export function getMissionPhaseIndex(mission: MissionState) {
+  const threadState = getMissionThreadState(mission);
+
+  switch (threadState) {
+    case 'tasked':
+      return 3;
+    case 'correlated':
+      return 2;
+    case 'asset-selected':
+    case 'target-selected':
+      return 1;
+    case 'idle':
+    default:
+      return 0;
+  }
+}
+
+export function getMissionStatusCopy(mission: MissionState) {
+  switch (getMissionThreadState(mission)) {
+    case 'tasked':
+      return `${mission.currentTask?.assetId} tasked to ${mission.currentTask?.targetId}. Assessment lane is live.`;
+    case 'correlated':
+      return 'Selections correlated. Task order can be issued.';
+    case 'asset-selected':
+      return `Asset ${mission.selectedAssetId} selected. Nominate a target to continue correlation.`;
+    case 'target-selected':
+      return `Target ${mission.selectedTargetId} nominated. Assign an asset to continue correlation.`;
+    case 'idle':
+    default:
+      return 'No thread established. Observe lane is open.';
+  }
+}
+
+export function getMissionFirstAction(mission: MissionState) {
+  switch (getMissionThreadState(mission)) {
+    case 'tasked':
+      return 'Monitor task execution and assess outcome.';
+    case 'correlated':
+      return 'Issue tasking when ready.';
+    case 'asset-selected':
+      return 'Select a target.';
+    case 'target-selected':
+      return 'Select an asset.';
+    case 'idle':
+    default:
+      return 'Select an asset to begin.';
+  }
+}
+
 export function getMissionAsset(mission: MissionState): Asset | null {
   const assetId = mission.currentTask?.assetId ?? mission.selectedAssetId;
   return assetId ? ASSETS.find((asset) => asset.id === assetId) ?? null : null;
@@ -21,38 +92,40 @@ export function getMissionTarget(mission: MissionState): TargetMarker | null {
 export function buildMissionMetrics(mission: MissionState): MissionMetric[] {
   const asset = getMissionAsset(mission);
   const target = getMissionTarget(mission);
+  const threadState = getMissionThreadState(mission);
+  const isIdle = threadState === 'idle';
   const hasCorrelation = Boolean(mission.selectedAssetId && mission.selectedTargetId);
-  const targetComplexity = target?.size === 'lg' ? 84 : target?.size === 'md' ? 72 : target ? 58 : 34;
-  const fuelWindow = asset ? Math.max(18, Math.round(asset.fuel * 0.92)) : 36;
-  const linkIntegrity = mission.currentTask ? 96 : hasCorrelation ? 78 : asset || target ? 54 : 30;
-  const routeCommit = mission.currentTask ? 93 : hasCorrelation ? 66 : 24;
-  const sensorFocus = asset ? Math.min(95, 52 + Math.round(asset.heading / 6)) : 40;
+  const targetComplexity = target?.size === 'lg' ? 84 : target?.size === 'md' ? 72 : target ? 58 : isIdle ? 18 : 34;
+  const fuelWindow = asset ? Math.max(18, Math.round(asset.fuel * 0.92)) : isIdle ? 22 : 36;
+  const linkIntegrity = mission.currentTask ? 96 : hasCorrelation ? 78 : asset || target ? 54 : 22;
+  const routeCommit = mission.currentTask ? 93 : hasCorrelation ? 66 : isIdle ? 12 : 24;
+  const sensorFocus = asset ? Math.min(95, 52 + Math.round(asset.heading / 6)) : isIdle ? 18 : 40;
   const riskIndex = target
     ? target.type === 'Building'
       ? 68
       : target.type === 'Infrastructure'
         ? 61
         : 42
-    : 26;
+    : isIdle ? 14 : 26;
 
   return [
     {
       label: 'Sensor',
       value: sensorFocus,
-      tone: asset ? 'blue' : 'yellow',
-      detail: asset ? `${asset.type} vector locked` : 'No platform selected',
+      tone: asset ? 'blue' : isIdle ? 'blue' : 'yellow',
+      detail: asset ? `${asset.type} vector locked` : isIdle ? 'Observe lane awaiting selection' : 'No platform selected',
     },
     {
       label: 'Link',
       value: linkIntegrity,
       tone: mission.currentTask ? 'yellow' : 'blue',
-      detail: mission.currentTask ? 'Task data link hardened' : hasCorrelation ? 'Cross-module chain present' : 'Correlation incomplete',
+      detail: mission.currentTask ? 'Task data link hardened' : hasCorrelation ? 'Cross-module chain present' : isIdle ? 'No thread continuity yet' : 'Correlation incomplete',
     },
     {
       label: 'Window',
       value: fuelWindow,
-      tone: fuelWindow > 60 ? 'blue' : fuelWindow > 35 ? 'yellow' : 'red',
-      detail: asset ? `${asset.fuel}% fuel remaining` : 'Time-on-station unknown',
+      tone: asset ? (fuelWindow > 60 ? 'blue' : fuelWindow > 35 ? 'yellow' : 'red') : isIdle ? 'blue' : 'yellow',
+      detail: asset ? `${asset.fuel}% fuel remaining` : isIdle ? 'Task window not committed' : 'Time-on-station unknown',
     },
     {
       label: 'Target',
@@ -64,13 +137,13 @@ export function buildMissionMetrics(mission: MissionState): MissionMetric[] {
       label: 'Task',
       value: routeCommit,
       tone: mission.currentTask ? 'yellow' : 'blue',
-      detail: mission.currentTask ? `${mission.currentTask.assetId} committed` : 'Awaiting task order',
+      detail: mission.currentTask ? `${mission.currentTask.assetId} committed` : isIdle ? 'No task order in thread' : 'Awaiting task order',
     },
     {
       label: 'Risk',
       value: riskIndex,
       tone: riskIndex > 60 ? 'red' : riskIndex > 40 ? 'yellow' : 'blue',
-      detail: target ? `Collateral exposure ${riskIndex}%` : 'Risk unscored',
+      detail: target ? `Collateral exposure ${riskIndex}%` : isIdle ? 'Risk posture unscored' : 'Risk unscored',
     },
   ];
 }
