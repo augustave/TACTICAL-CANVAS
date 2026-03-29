@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import type { AlertLevel, MissionState } from '../types';
-import { buildMissionAlerts } from '../utils/mission';
+import { buildMissionAlerts, getMissionThreadState } from '../utils/mission';
 
 const AlertTriangleIcon = ({ size = 14, className = "" }: { size?: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" className={className}>
@@ -47,6 +47,12 @@ export function AlertsWidget({ mission, onSelectAsset }: Props) {
   const sortedAlerts = buildMissionAlerts(mission);
   const missionAssetId = mission.currentTask?.assetId ?? mission.selectedAssetId;
   const missionTargetId = mission.currentTask?.targetId ?? mission.selectedTargetId;
+  const threadState = getMissionThreadState(mission);
+  const headerContext = missionAssetId || missionTargetId
+    ? `THREAD: ${missionAssetId ?? 'NO ASSET'} / ${missionTargetId ?? 'NO TARGET'}`
+    : threadState === 'idle'
+      ? 'BACKGROUND FEED'
+      : 'NO THREAD FOCUS';
 
   return (
     <div className="w-full h-full min-h-[200px] bg-[#111] border border-[#333] flex flex-col font-mono text-xs text-archival-white overflow-hidden">
@@ -56,11 +62,9 @@ export function AlertsWidget({ mission, onSelectAsset }: Props) {
           <div className="w-1.5 h-1.5 bg-alert-red rounded-full animate-ping" />
           <span className="font-bold tracking-widest text-[#888]">SYSTEM ALERTS</span>
         </div>
-        {(missionAssetId || missionTargetId) && (
-          <span className="text-[0.5rem] text-acid-yellow">
-            FOCUS: {missionAssetId ?? 'NO ASSET'} / {missionTargetId ?? 'NO TARGET'}
-          </span>
-        )}
+        <span className={`text-[0.5rem] ${missionAssetId || missionTargetId ? 'text-acid-yellow' : 'text-[#667983]'}`}>
+          {headerContext}
+        </span>
       </div>
 
       {/* List */}
@@ -85,10 +89,14 @@ export function AlertsWidget({ mission, onSelectAsset }: Props) {
               }}
               transition={{ delay: i * 0.1, layout: { type: 'spring', stiffness: 300, damping: 30 } }}
               onClick={() => alert.assetId && onSelectAsset?.(alert.assetId)}
-              className={`flex gap-2 p-2 border cursor-pointer transition-colors group ${
+              className={`flex gap-2 p-2 border transition-colors group ${
                 isLinked
                   ? 'border-acid-yellow/30'
-                  : 'border-[#2a2a2a] hover:bg-[#222] hover:border-[#444]'
+                  : 'border-[#2a2a2a]'
+              } ${
+                alert.assetId
+                  ? 'cursor-pointer hover:bg-[#222] hover:border-[#444]'
+                  : 'cursor-default'
               }`}
             >
               <Icon size={14} className={`mt-0.5 ${color}`} />

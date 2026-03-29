@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
-import { ASSETS } from '../data';
+import { ASSETS, TARGETS } from '../data';
 import type { MissionTask } from '../types';
+import { getMissionFirstAction, getMissionThreadState } from '../utils/mission';
 import { RadarSurface } from './RadarSurface';
 
 const CrosshairIcon = ({ size = 14, className = "" }: { size?: number, className?: string }) => (
@@ -38,8 +39,66 @@ export function AirspaceRadar({
   currentTask = null,
   onSelectAsset,
 }: Props) {
-  const selectedAsset = selectedAssetId ? ASSETS.find(a => a.id === selectedAssetId) : null;
-  const linkedTargetId = currentTask?.targetId ?? selectedTargetId;
+  const mission = { selectedAssetId, selectedTargetId, currentTask };
+  const threadState = getMissionThreadState(mission);
+  const isIdle = threadState === 'idle';
+  const selectedAsset = selectedAssetId ? ASSETS.find((asset) => asset.id === selectedAssetId) ?? null : null;
+  const selectedTarget = selectedTargetId ? TARGETS.find((target) => target.id === selectedTargetId) ?? null : null;
+  const linkedTargetId = currentTask?.targetId ?? selectedTarget?.id ?? null;
+  const stripLeadLabel = currentTask
+    ? 'TASK ORDER'
+    : threadState === 'correlated'
+      ? 'TASKING READY'
+      : threadState === 'asset-selected' || threadState === 'target-selected'
+        ? 'CORRELATING'
+        : 'THREAD IDLE';
+  const stripLeadClass = currentTask
+    ? 'text-acid-yellow'
+    : isIdle
+      ? 'text-radar-blue'
+      : 'text-[#8a948f]';
+  const targetTitle = linkedTargetId ?? 'No target nominated';
+  const targetDetail = currentTask
+    ? 'Committed task target'
+    : selectedTarget
+      ? `${selectedTarget.type} / ${selectedTarget.dist}`
+      : selectedAsset
+        ? 'Nominate a target to continue'
+        : 'Correlation dormant';
+  const assetTitle = selectedAsset
+    ? selectedAsset.id
+    : isIdle
+      ? 'Select asset to begin Observe'
+      : 'Assign asset to continue';
+  const assetDetail = selectedAsset
+    ? `${selectedAsset.type} / ${selectedAsset.status} / FUEL ${selectedAsset.fuel}%`
+    : isIdle
+      ? 'Platforms available, none committed'
+      : 'Asset lane open';
+  const radarModeLabel = currentTask
+    ? 'Task Track'
+    : threadState === 'correlated'
+      ? 'Task Queue'
+      : threadState === 'asset-selected'
+        ? 'Target Search'
+        : threadState === 'target-selected'
+          ? 'Asset Search'
+          : 'Wide Search';
+  const radarModeClass = currentTask
+    ? 'text-acid-yellow'
+    : isIdle
+      ? 'text-[#8ab7d8]'
+      : 'text-radar-blue';
+  const gateStatus = currentTask
+    ? 'Priority Intercept'
+    : isIdle
+      ? 'Standby Coverage'
+      : 'Thread Formation';
+  const footerLabel = currentTask
+    ? `TASK ${currentTask.assetId} -> ${currentTask.targetId}`
+    : isIdle
+      ? 'THREAD IDLE | SELECT ASSET'
+      : `${stripLeadLabel} | ${getMissionFirstAction(mission).toUpperCase()}`;
 
   return (
     <motion.div
@@ -57,37 +116,48 @@ export function AirspaceRadar({
       </div>
       <div className="absolute right-[8%] top-[16%] z-10 hidden md:flex items-center gap-3 border border-[rgba(229,255,0,0.18)] bg-black/45 px-2 py-1 text-[0.48rem] uppercase tracking-[0.22em] text-[#87918e] backdrop-blur-sm">
         <span>Range 240nm</span>
-        <span className="text-acid-yellow">{currentTask ? 'Task Track' : 'Wide Search'}</span>
+        <span className={radarModeClass}>{radarModeLabel}</span>
       </div>
       <div className="absolute left-1/2 top-1/2 z-[5] h-[82%] w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(255,255,255,0.03)] shadow-[0_0_0_1px_rgba(255,255,255,0.02),inset_0_0_35px_rgba(0,0,0,0.55)] pointer-events-none" />
       <div className="absolute left-1/2 top-1/2 z-[5] h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-acid-yellow/35 bg-black/25 shadow-[0_0_14px_rgba(229,255,0,0.12)] pointer-events-none" />
       <div className="absolute left-1/2 top-[12%] z-[5] h-[76%] w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(229,255,0,0.16),transparent)] pointer-events-none" />
       <div className="absolute left-[12%] top-1/2 z-[5] h-px w-[76%] -translate-y-1/2 bg-[linear-gradient(90deg,transparent,rgba(229,255,0,0.16),transparent)] pointer-events-none" />
 
-      {/* Top Assignment Bar — shows selected asset context */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center bg-black border border-[#333] text-archival-white text-xs whitespace-nowrap">
-        <div className="px-3 py-1.5 text-[#888] border-r border-[#333] hidden sm:block">
-          {currentTask ? 'TASKED TO:' : selectedAsset ? 'CORRELATING:' : 'ASSIGN ASSET:'}
+      <div className="absolute top-4 left-1/2 z-50 flex w-[min(92%,820px)] -translate-x-1/2 items-stretch bg-black/90 border border-[#333] text-archival-white text-xs whitespace-nowrap shadow-[0_14px_32px_rgba(0,0,0,0.32)] backdrop-blur-sm">
+        <div className={`hidden border-r border-[#333] px-3 py-2 text-[0.55rem] uppercase tracking-[0.24em] sm:flex sm:items-center ${stripLeadClass}`}>
+          {stripLeadLabel}
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 border-r border-[#333] hover:bg-[#222] cursor-pointer">
-          <CrosshairIcon size={14} className="text-target-red" />
-          <span>{linkedTargetId ?? 'Select Target'}</span>
+        <div className={`flex min-w-0 flex-1 items-center gap-2 border-r border-[#333] px-3 py-2 ${selectedTarget ? 'bg-[#151010]' : 'bg-transparent'}`}>
+          <CrosshairIcon size={14} className={linkedTargetId ? 'text-target-red' : 'text-[#666]'} />
+          <div className="min-w-0 flex-1 leading-none">
+            <div className={`truncate text-[0.65rem] font-bold uppercase tracking-[0.16em] ${linkedTargetId ? 'text-target-red' : 'text-[#848484]'}`}>
+              {targetTitle}
+            </div>
+            <div className="mt-1 truncate text-[0.5rem] uppercase tracking-[0.18em] text-[#666]">
+              {targetDetail}
+            </div>
+          </div>
           {currentTask && (
-            <span className="text-[0.5rem] text-acid-yellow ml-1">{currentTask.status}</span>
+            <span className="border border-acid-yellow/40 bg-acid-yellow/10 px-1.5 py-0.5 text-[0.45rem] text-acid-yellow">
+              {currentTask.status}
+            </span>
           )}
-          <span className="text-[#666] ml-2">&gt;</span>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#222] cursor-pointer">
-          <PlaneIcon size={14} className="text-radar-blue" />
-          <div className="flex flex-col leading-none">
-            <span>{selectedAsset ? `${selectedAsset.type} / ${selectedAsset.status}` : 'Dragnet71-11-2'}</span>
-            <span className="text-[0.5rem] text-[#666]">{selectedAsset ? `FUEL: ${selectedAsset.fuel}%` : 'Flight'}</span>
+        <div className={`flex min-w-0 flex-[1.15] items-center gap-2 px-3 py-2 ${selectedAsset ? 'bg-[#0f1519]' : 'bg-transparent'}`}>
+          <PlaneIcon size={14} className={selectedAsset ? 'text-radar-blue' : 'text-[#666]'} />
+          <div className="min-w-0 flex flex-col leading-none">
+            <span className={`truncate text-[0.65rem] font-bold uppercase tracking-[0.16em] ${selectedAsset ? 'text-radar-blue' : 'text-[#9ba7ac]'}`}>
+              {assetTitle}
+            </span>
+            <span className="mt-1 truncate text-[0.5rem] uppercase tracking-[0.18em] text-[#666]">
+              {assetDetail}
+            </span>
           </div>
         </div>
         {selectedAsset && onSelectAsset && (
           <div
             onClick={() => onSelectAsset(null)}
-            className="px-2 py-1.5 border-l border-[#333] hover:bg-target-red hover:text-white cursor-pointer transition-colors"
+            className="flex cursor-pointer items-center border-l border-[#333] px-2 py-2 hover:bg-target-red hover:text-white transition-colors"
           >
             ✕
           </div>
@@ -97,7 +167,7 @@ export function AirspaceRadar({
       <div className="pointer-events-none absolute bottom-[13%] left-[7%] z-10 hidden md:flex flex-col gap-1 border border-[rgba(255,255,255,0.08)] bg-black/35 px-2 py-2 text-[0.45rem] uppercase tracking-[0.22em] text-[#7c8886] backdrop-blur-sm">
         <span className="text-[#b5c2bf]">Gate A</span>
         <span>Altitude Stack</span>
-        <span>{currentTask ? 'Priority Intercept' : 'Routine Coverage'}</span>
+        <span>{gateStatus}</span>
       </div>
       <div className="pointer-events-none absolute bottom-[15%] right-[8%] z-10 hidden md:flex flex-col items-end gap-1 text-[0.45rem] uppercase tracking-[0.24em] text-[#86908d]">
         <span>090</span>
@@ -108,8 +178,25 @@ export function AirspaceRadar({
       {/* Flight Markers — driven from shared ASSETS data */}
       {ASSETS.map((asset) => {
         const isSelected = selectedAssetId === asset.id;
-        const isActive = isSelected || asset.id === 'Dragnet71'; // Dragnet71 always active by default
         const isTasked = currentTask?.assetId === asset.id;
+        const markerClass = isSelected
+          ? 'text-acid-yellow drop-shadow-[0_0_8px_rgba(229,255,0,1)]'
+          : isTasked
+            ? 'text-target-red drop-shadow-[0_0_8px_rgba(208,2,27,1)]'
+            : asset.status === 'ACTIVE'
+              ? 'text-radar-blue drop-shadow-[0_0_4px_rgba(74,144,226,0.75)]'
+              : asset.status === 'LOITER'
+                ? 'text-[#b9ad58] drop-shadow-[0_0_4px_rgba(185,173,88,0.55)]'
+                : asset.status === 'RTB'
+                  ? 'text-alert-red drop-shadow-[0_0_4px_rgba(208,2,27,0.45)]'
+                  : 'text-[#7f8a8e]';
+        const labelClass = isSelected
+          ? 'text-acid-yellow font-bold'
+          : isTasked
+            ? 'text-target-red font-bold'
+            : asset.status === 'ACTIVE'
+              ? 'text-radar-blue font-semibold'
+              : 'text-[#b6c0be]';
 
         return (
             <div
@@ -127,19 +214,11 @@ export function AirspaceRadar({
             >
               <NavigationIcon
                 size={14}
-                className={
-                  isSelected
-                    ? "text-acid-yellow drop-shadow-[0_0_8px_rgba(229,255,0,1)]"
-                    : isTasked
-                      ? "text-target-red drop-shadow-[0_0_8px_rgba(208,2,27,1)]"
-                    : isActive
-                      ? "text-acid-yellow drop-shadow-[0_0_5px_rgba(229,255,0,0.8)]"
-                      : "text-radar-blue drop-shadow-[0_0_5px_rgba(100,150,255,0.8)]"
-                }
+                className={markerClass}
                 style={{ transform: `rotate(${asset.heading}deg)` }}
                 fill="currentColor"
               />
-              {(isActive || isSelected || isTasked) && (
+              {(isSelected || isTasked) && (
                 <div className={`absolute inset-0 animate-ping rounded-full opacity-40 ${isTasked ? 'bg-target-red' : 'bg-acid-yellow'}`} />
               )}
               {/* Selection ring */}
@@ -160,7 +239,7 @@ export function AirspaceRadar({
                 />
               )}
             </motion.div>
-            <div className={`flex flex-col items-center leading-none ${isSelected ? 'text-acid-yellow font-bold' : isTasked ? 'text-target-red font-bold' : isActive ? 'text-acid-yellow font-bold' : 'text-archival-white'}`}>
+            <div className={`flex flex-col items-center leading-none ${labelClass}`}>
               <span className="text-[0.6rem] tracking-wider bg-black/50 px-1 rounded">{asset.id}</span>
               <span className="text-[0.5rem] text-[#888] bg-black/50 px-1 rounded mt-0.5">
                 FL{Math.floor(200 + asset.heading * 0.5)}
@@ -172,9 +251,9 @@ export function AirspaceRadar({
 
       {/* Bottom Right Info */}
       <div className="absolute bottom-4 right-4 bg-black border border-[#333] px-3 py-1 text-archival-white text-[0.6rem] flex items-center gap-2">
-        <span>{currentTask ? `TASK ${currentTask.assetId} -> ${currentTask.targetId}` : new Date().toISOString().replace('T', ' ').slice(0, 19) + 'Z'}</span>
+        <span className={isIdle ? 'text-[#8fa9b8]' : ''}>{footerLabel}</span>
         <div className="w-3 h-3 border border-[#666] flex items-center justify-center">
-          <div className="w-1.5 h-1.5 bg-acid-yellow" />
+          <div className={`w-1.5 h-1.5 ${currentTask ? 'bg-acid-yellow' : isIdle ? 'bg-radar-blue' : 'bg-[#888]'}`} />
         </div>
       </div>
     </motion.div>
